@@ -9,6 +9,9 @@ import { Field, Icon, NumberInput, PageHeader } from '../components/ui'
 import { paymentLabel } from '../components/SubscriptionCard'
 import { Collapse, Segmented, shakeErrors } from '../components/motion'
 import { useToast } from '../components/Toast'
+import CatalogSearch from '../components/CatalogSearch'
+import { checklistNames, defaultDetail, subscriptionName, type CatalogPlan, type PriceOption } from '../lib/catalog'
+import { useCatalog } from '../lib/useCatalog'
 
 type Num = number | ''
 
@@ -41,6 +44,7 @@ interface Draft {
   usageTargetInput: Num
   memo: string
   benefits: BenefitDraft[]
+  catalogId: string | null
 }
 
 const CYCLES = ['1', '3', '6', '12'] as const
@@ -69,6 +73,7 @@ function toDraft(sub: Subscription | undefined, benefits: Benefit[], today: stri
       usageTargetInput: '',
       memo: '',
       benefits: [],
+      catalogId: null,
     }
   }
   const preset = (CYCLES as readonly string[]).includes(String(sub.cycleMonths)) ? (String(sub.cycleMonths) as Draft['cyclePreset']) : 'custom'
@@ -93,7 +98,17 @@ function toDraft(sub: Subscription | undefined, benefits: Benefit[], today: stri
     usageTargetInput: sub.usageTarget ? (sub.usageUnit === 'minutes' ? +(sub.usageTarget / 60).toFixed(2) : sub.usageTarget) : '',
     memo: sub.memo,
     benefits: benefits.map((b) => ({ id: b.id, name: b.name, resetCycle: b.resetCycle, estimatedValue: b.estimatedValue })),
+    catalogId: sub.catalogId ?? null,
   }
+}
+
+function cycleDraft(cycleMonths: number): Pick<Draft, 'cyclePreset' | 'customCycle'> {
+  return (CYCLES as readonly string[]).includes(String(cycleMonths)) ? { cyclePreset: String(cycleMonths) as Draft['cyclePreset'], customCycle: '' } : { cyclePreset: 'custom', customCycle: cycleMonths }
+}
+
+function optionLabel(o: PriceOption): string {
+  if (o.price === 0) return o.label
+  return `${o.label} ${formatWon(o.price)}`
 }
 
 type Errors = Partial<Record<string, string>>
@@ -152,6 +167,8 @@ export default function SubscriptionForm() {
   )
   const [submitted, setSubmitted] = useState(false)
   const [saving, setSaving] = useState(false)
+  const catalog = useCatalog()
+  const linkedPlan = d.catalogId ? catalog?.plans.find((p) => p.id === d.catalogId) : undefined
 
   if (id && !existing) {
     return (
@@ -190,7 +207,29 @@ export default function SubscriptionForm() {
       usageUnit: d.usageUnit,
       usageTarget: d.detailType === 'usage' ? usageTarget : 0,
       memo: d.memo.trim(),
+      catalogId: d.catalogId,
     }
+  }
+
+  /** 카탈로그 요금제를 고르면 이름·카테고리·가격·주기·상세 유형·혜택을 채운다 */
+  function applyPlan(plan: CatalogPlan) {
+    const price = plan.prices[0]
+    const detail = defaultDetail(plan)
+    const importBenefits = detail.detailType === 'benefit'
+    const replaceBenefits = importBenefits && (d.benefits.length === 0 || confirm('입력해 둔 혜택 항목을 이 요금제의 혜택으로 바꿀까요?'))
+    setD((p) => ({
+      ...p,
+      name: subscriptionName(plan),
+      category: plan.category,
+      catalogId: plan.id,
+      ...(price ? { listPrice: price.price, ...cycleDraft(price.cycleMonths) } : { listPrice: '' }),
+      detailType: detail.detailType,
+      usageUnit: detail.usageUnit,
+      benefits: replaceBenefits
+        ? checklistNames(plan).map((name) => ({ id: newId(), name, resetCycle: 'monthly' as ResetCycle, estimatedValue: 0 }))
+        : p.benefits,
+    }))
+    toast(`${subscriptionName(plan)} 요금제 정보를 불러왔어요`)
   }
 
   const preview = toSubscription()
@@ -253,9 +292,38 @@ export default function SubscriptionForm() {
       />
 
       <FormSection title="기본 정보">
-        <Field label="서비스명" error={err('name')}>
-          <input className={`input ${err('name') ? 'input-error' : ''}`} value={d.name} onChange={(e) => set('name', e.target.value)} placeholder="예: 넷플릭스" maxLength={50} />
+        <Field label="서비스명" error={err('name')} hint={linkedPlan ? undefined : '목록에서 고르면 가격과 혜택이 채워져요. 목록에 없으면 이름만 입력하세요.'}>
+          <CatalogSearch value={d.name} onChange={(v) => set('name', v)} onPick={applyPlan} invalid={!!err('name')} />
         </Field>
+        <Collapse open={!!linkedPlan}>
+          {linkedPlan && (
+            <div className="mb-1 space-y-2 rounded-2xl bg-accent-soft p-3 text-sm">
+              <div className="flex items-start gap-2">
+                <span className="min-w-0 flex-1">
+                  <b className="font-medium">
+                    {linkedPlan.service} · {linkedPlan.plan}
+                  </b>
+                  <span className="block text-xs whitespace-pre-line text-ink-2">{linkedPlan.priceText}</span>
+                </span>
+                <button type="button" className="link shrink-0 text-xs" onClick={() => set('catalogId', null)}>
+                  연결 해제
+                </button>
+              </div>
+              {linkedPlan.prices.length > 1 && (
+                <Segmented
+                  label="가격 옵션"
+                  value={String(linkedPlan.prices.findIndex((o) => o.price === d.listPrice && o.cycleMonths === cycleMonths))}
+                  onChange={(v) => {
+                    const o = linkedPlan.prices[Number(v)]
+                    setD((p) => ({ ...p, listPrice: o.price, ...cycleDraft(o.cycleMonths) }))
+                  }}
+                  options={linkedPlan.prices.map((o, i) => ({ value: String(i), label: optionLabel(o) }))}
+                  className="bg-surface/70"
+                />
+              )}
+            </div>
+          )}
+        </Collapse>
         <Field label="카테고리">
           <input className="input" list="categories" value={d.category} onChange={(e) => set('category', e.target.value)} placeholder="예: OTT" maxLength={20} />
           <datalist id="categories">

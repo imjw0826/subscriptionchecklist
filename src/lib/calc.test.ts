@@ -38,6 +38,7 @@ function sub(p: Partial<Subscription> = {}): Subscription {
     usageUnit: 'count',
     usageTarget: 0,
     memo: '',
+    catalogId: null,
     ...p,
   }
 }

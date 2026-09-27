@@ -31,8 +31,12 @@ create table if not exists subscriptions (
   usage_unit text not null default 'count' check (usage_unit in ('count', 'minutes')),
   usage_target integer not null default 0 check (usage_target >= 0),
   memo text not null default '',
+  catalog_id text,
   created_at timestamptz not null default now()
 );
+
+-- 기존 DB 마이그레이션: 카탈로그 요금제 연결
+alter table subscriptions add column if not exists catalog_id text;
 
 create table if not exists benefits (
   id uuid primary key,

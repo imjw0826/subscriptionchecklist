@@ -7,6 +7,7 @@ import { Avatar, Icon, PageHeader, Stat, StatGroup, StatusBadge } from '../compo
 import { paymentLabel } from '../components/SubscriptionCard'
 import BenefitDetail from '../components/BenefitDetail'
 import UsageDetail from '../components/UsageDetail'
+import PlanInfo from '../components/PlanInfo'
 
 export default function SubscriptionDetail() {
   const { id } = useParams()
@@ -81,6 +82,8 @@ export default function SubscriptionDetail() {
       {sub.memo && <p className="rounded-2xl bg-sunken px-4 py-3 text-sm whitespace-pre-wrap text-ink-2">{sub.memo}</p>}
 
       {sub.detailType === 'benefit' ? <BenefitDetail sub={sub} monthly={monthly} /> : <UsageDetail sub={sub} monthly={monthly} />}
+
+      {sub.catalogId && <PlanInfo catalogId={sub.catalogId} />}
     </div>
   )
 }

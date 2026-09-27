@@ -26,6 +26,8 @@ export interface Subscription {
   /** 이 만큼 쓰면 본전 (횟수 또는 분) */
   usageTarget: number
   memo: string
+  /** 카탈로그(src/data/catalog.md)에서 고른 요금제 ID. 직접 입력한 구독은 null */
+  catalogId: string | null
 }
 
 export type PaymentMethodType = 'card' | 'account' | 'easypay'

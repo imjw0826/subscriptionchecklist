@@ -16,6 +16,7 @@ const base: Omit<Subscription, 'id' | 'name' | 'category' | 'listPrice' | 'nextB
   usageUnit: 'minutes',
   usageTarget: 0,
   memo: '',
+  catalogId: null,
 }
 
 /** 로컬 모드 첫 실행 시 보여줄 샘플 데이터 (오늘 날짜 기준으로 생성) */
