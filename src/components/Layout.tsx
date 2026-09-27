@@ -1,40 +1,10 @@
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useStore } from '../store/StoreContext'
 import { supabase } from '../store/supabase'
 import { useSlidingPill } from './motion'
 import { Avatar, Icon } from './ui'
 import { diffDays } from '../lib/date'
-
-type Theme = 'system' | 'light' | 'dark'
-const THEME_LABEL: Record<Theme, string> = { system: '시스템', light: '라이트', dark: '다크' }
-
-function useTheme() {
-  const [theme, setTheme] = useState<Theme>(() => {
-    try {
-      return (localStorage.getItem('theme') as Theme) || 'system'
-    } catch {
-      return 'system'
-    }
-  })
-  useEffect(() => {
-    const mq = matchMedia('(prefers-color-scheme: dark)')
-    const apply = () => document.documentElement.classList.toggle('dark', theme === 'dark' || (theme === 'system' && mq.matches))
-    apply()
-    try {
-      if (theme === 'system') localStorage.removeItem('theme')
-      else localStorage.setItem('theme', theme)
-    } catch {
-      /* 무시 */
-    }
-    mq.addEventListener('change', apply)
-    return () => mq.removeEventListener('change', apply)
-  }, [theme])
-  const next = () => setTheme((t) => (t === 'system' ? 'light' : t === 'light' ? 'dark' : 'system'))
-  return { theme, next }
-}
-
-const THEME_ICON = { system: 'monitor', light: 'sun', dark: 'moon' } as const
 
 /** 경로 깊이로 페이지 진입 방향을 정한다: 깊어지면 오른쪽에서(1), 얕아지면 왼쪽에서(-1) */
 function usePageDirection(pathname: string): number {
@@ -89,7 +59,7 @@ function SideLabel({ children, first }: { children: ReactNode; first?: boolean }
 }
 
 /** 데스크탑 사이드바 — 활성 항목 아래로 초록 pill이 미끄러진다 (Tabs sliding의 세로 버전) */
-function Sidebar({ pathname, theme, onTheme }: { pathname: string; theme: Theme; onTheme: () => void }) {
+function Sidebar({ pathname }: { pathname: string }) {
   const { data, today, mode } = useStore()
   const nav = useRef<HTMLElement>(null)
   const pill = useRef<HTMLSpanElement>(null)
@@ -100,7 +70,7 @@ function Sidebar({ pathname, theme, onTheme }: { pathname: string; theme: Theme;
   const subs = [...data.subscriptions].sort((a, b) => a.name.localeCompare(b.name, 'ko'))
 
   return (
-    <aside className="sticky top-6 hidden h-[calc(100dvh-3rem)] w-64 shrink-0 flex-col overflow-y-auto px-4 py-6 lg:flex">
+    <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col overflow-y-auto border-r border-line px-4 py-6 lg:flex">
       <NavLink to="/" className="mb-8 flex items-center gap-2.5 px-3 text-lg font-medium">
         <img src="/favicon.svg" alt="" className="h-7 w-7" />
         구독 체크리스트
@@ -138,10 +108,6 @@ function Sidebar({ pathname, theme, onTheme }: { pathname: string; theme: Theme;
 
       <div className="mt-auto space-y-0.5 pt-6">
         {mode === 'local' && <p className="mb-3 rounded-xl bg-sunken px-3 py-2 text-xs leading-relaxed text-ink-2">로컬 모드 — 이 브라우저에만 저장돼요.</p>}
-        <button onClick={onTheme} className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-[15px] text-ink hover:bg-ink/5">
-          <Icon name={THEME_ICON[theme]} />
-          테마: {THEME_LABEL[theme]}
-        </button>
         {supabase && (
           <button onClick={() => supabase!.auth.signOut()} className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-[15px] text-ink hover:bg-ink/5">
             <Icon name="logout" />
@@ -154,7 +120,7 @@ function Sidebar({ pathname, theme, onTheme }: { pathname: string; theme: Theme;
 }
 
 /** 모바일 상단 바 */
-function MobileHeader({ pathname, theme, onTheme }: { pathname: string; theme: Theme; onTheme: () => void }) {
+function MobileHeader({ pathname }: { pathname: string }) {
   const { mode } = useStore()
   const bar = useRef<HTMLElement>(null)
   const pill = useRef<HTMLSpanElement>(null)
@@ -176,9 +142,6 @@ function MobileHeader({ pathname, theme, onTheme }: { pathname: string; theme: T
             결제수단
           </NavLink>
         </nav>
-        <button onClick={onTheme} className="btn-ghost h-9 w-9 p-0" aria-label={`테마: ${THEME_LABEL[theme]}`} title={`테마: ${THEME_LABEL[theme]}`}>
-          <Icon name={THEME_ICON[theme]} />
-        </button>
       </div>
       {mode === 'local' && <p className="px-4 pb-2 text-center text-xs text-ink-3">로컬 모드 — 이 브라우저에만 저장돼요.</p>}
     </header>
@@ -187,7 +150,6 @@ function MobileHeader({ pathname, theme, onTheme }: { pathname: string; theme: T
 
 export default function Layout() {
   const { error, dismissError, loading } = useStore()
-  const { theme, next } = useTheme()
   const { pathname } = useLocation()
   const dir = usePageDirection(pathname)
 
@@ -196,11 +158,11 @@ export default function Layout() {
   }, [pathname])
 
   return (
-    <div className="min-h-dvh lg:p-6">
-      <div className="mx-auto flex min-h-[calc(100dvh-3rem)] max-w-[1480px] lg:rounded-[36px] lg:bg-app lg:shadow-[0_1px_2px_rgb(0_0_0/0.04),0_8px_32px_-12px_rgb(0_0_0/0.12)]">
-        <Sidebar pathname={pathname} theme={theme} onTheme={next} />
+    <div className="min-h-dvh">
+      <div className="flex min-h-dvh">
+        <Sidebar pathname={pathname} />
         <div className="min-w-0 flex-1">
-          <MobileHeader pathname={pathname} theme={theme} onTheme={next} />
+          <MobileHeader pathname={pathname} />
 
           {error && (
             <div className="flex items-start gap-2 px-4 pt-4 lg:px-8">
@@ -214,7 +176,7 @@ export default function Layout() {
             </div>
           )}
 
-          <main className="px-4 pt-4 pb-24 lg:px-8 lg:pt-7 lg:pb-10">
+          <main className="mx-auto max-w-[1400px] px-4 pt-4 pb-24 lg:px-10 lg:pt-8 lg:pb-12">
             {loading ? (
               <Skeleton />
             ) : (

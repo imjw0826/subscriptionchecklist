@@ -10,8 +10,6 @@ export interface Repository {
   loadAll(): Promise<AppData>
   upsert(table: TableName, rows: Row[]): Promise<void>
   remove(table: TableName, ids: string[]): Promise<void>
-  /** 백업 가져오기: 전체 데이터를 교체 */
-  replaceAll(data: AppData): Promise<void>
 }
 
 export const TABLES: TableName[] = ['paymentMethods', 'subscriptions', 'benefits', 'benefitUses', 'usageLogs']
@@ -63,9 +61,6 @@ export function createLocalRepo(): Repository {
       ;(data[table] as unknown as Row[]) = (data[table] as unknown as Row[]).filter((r) => !ids.includes(r.id))
       write(data)
     },
-    async replaceAll(data) {
-      write(data)
-    },
   }
 }
 
@@ -99,7 +94,7 @@ export function createSupabaseRepo(client: SupabaseClient): Repository {
   const check = (error: { message: string } | null) => {
     if (error) throw new Error(error.message)
   }
-  const repo: Repository = {
+  return {
     kind: 'supabase',
     async loadAll() {
       const data = emptyData()
@@ -122,14 +117,5 @@ export function createSupabaseRepo(client: SupabaseClient): Repository {
       const { error } = await client.from(SQL_TABLE[table]).delete().in('id', ids)
       check(error)
     },
-    async replaceAll(data) {
-      // 자식 테이블부터 지우고 부모부터 넣는다
-      for (const t of [...TABLES].reverse()) {
-        const { error } = await client.from(SQL_TABLE[t]).delete().not('id', 'is', null)
-        check(error)
-      }
-      for (const t of TABLES) await repo.upsert(t, data[t] as unknown as Row[])
-    },
   }
-  return repo
 }

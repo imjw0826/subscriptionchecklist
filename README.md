@@ -43,8 +43,6 @@ cp .env.example .env.local   # 두 값을 채운 뒤
 npm run dev
 ```
 
-로컬 모드에서 쓰던 데이터는 대시보드 하단 **JSON 내보내기** → 배포된 사이트에서 **JSON 가져오기**로 옮길 수 있습니다.
-
 anon 키는 브라우저에 공개되는 용도의 키라 괜찮지만, `service_role` 키는 절대 앱이나 Vercel 환경변수에 넣지 마세요. 데이터 보호는 RLS 정책이 담당합니다.
 
 ## 구조
@@ -57,7 +55,7 @@ src/
   store/repo.ts            저장소 추상화: localStorage / Supabase
   store/StoreContext.tsx   앱 상태와 CRUD, 지난 결제일 자동 갱신
   pages/                   대시보드, 상세, 구독 추가·편집, 결제수단, 로그인
-  components/              카드, 혜택형/이용형 상세, 백업, 공통 UI
+  components/              카드, 혜택형/이용형 상세, 모션·토스트, 공통 UI
 supabase/schema.sql        테이블 + RLS
 ```
 

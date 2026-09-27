@@ -18,7 +18,6 @@ interface Store {
   deleteBenefitUse(id: string): Promise<void>
   saveUsageLog(log: UsageLog): Promise<void>
   deleteUsageLog(id: string): Promise<void>
-  replaceAll(data: AppData): Promise<void>
   dismissError(): void
 }
 
@@ -168,10 +167,6 @@ export function StoreProvider({ repo, children }: { repo: Repository; children: 
       },
       async deleteUsageLog(id) {
         return apply({ remove: { usageLogs: [id] } })
-      },
-      async replaceAll(next) {
-        await run(() => repo.replaceAll(next))
-        setData(next)
       },
       dismissError() {
         setError(null)

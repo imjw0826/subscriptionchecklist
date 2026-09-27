@@ -61,7 +61,7 @@ export default function Login() {
   const inCodeStep = step === 'code' || step === 'verifying'
 
   return (
-    <div className="flex min-h-dvh items-center justify-center bg-page px-4">
+    <div className="flex min-h-dvh items-center justify-center bg-app px-4">
       <div className="panel w-full max-w-sm p-8">
         <img src="/favicon.svg" alt="" className="mb-4 h-10 w-10" />
         <h1 className="text-2xl tracking-tight">구독 체크리스트</h1>

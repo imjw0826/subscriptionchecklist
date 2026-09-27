@@ -1,12 +1,32 @@
 {
   "version": "0.0.1",
   "configurations": [
-    { "name": "dev", "runtimeExecutable": "npm", "runtimeArgs": ["run", "dev", "--", "--port", "5173", "--strictPort"], "port": 5173 },
     {
-      "name": "login-preview",
+      "name": "dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--",
+        "--port",
+        "5173",
+        "--strictPort"
+      ],
+      "port": 5173
+    },
+    {
+      "name": "local-mode",
       "runtimeExecutable": "env",
-      "runtimeArgs": ["VITE_SUPABASE_URL=https://demo-project.supabase.co", "VITE_SUPABASE_ANON_KEY=demo", "npx", "vite", "--port", "5174", "--strictPort"],
-      "port": 5174
+      "runtimeArgs": [
+        "VITE_SUPABASE_URL=",
+        "VITE_SUPABASE_ANON_KEY=",
+        "npx",
+        "vite",
+        "--port",
+        "5175",
+        "--strictPort"
+      ],
+      "port": 5175
     }
   ]
 }

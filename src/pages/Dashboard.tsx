@@ -6,7 +6,6 @@ import { achievementFor, computeTotals, monthlyCost, monthlyCostAfterTrial, next
 import { formatDate, formatDday, weekday } from '../lib/date'
 import { formatWon } from '../lib/format'
 import SubscriptionCard from '../components/SubscriptionCard'
-import Backup from '../components/Backup'
 import { Avatar, Icon, PageHeader, Stat, TimePill } from '../components/ui'
 import { AnimatedNumber, Segmented } from '../components/motion'
 
@@ -98,7 +97,6 @@ export default function Dashboard() {
       {/* 이번 달 실부담 총액 */}
       <div className="overflow-hidden rounded-3xl shadow-card">
         <Stat
-          icon={<Icon name="wallet" />}
           label="이번 달 실부담"
           large
           value={<AnimatedNumber value={totals.monthly} format={formatWon} />}
@@ -142,7 +140,7 @@ export default function Dashboard() {
       {data.subscriptions.length === 0 && (
         <div className="panel t-reveal p-6 text-center">
           <p className="text-lg">아직 등록된 구독이 없어요</p>
-          <p className="mt-1 text-sm text-ink-2">첫 구독을 추가하거나, 다른 곳에서 쓰던 데이터가 있다면 맨 아래 &lsquo;JSON 가져오기&rsquo;로 옮길 수 있어요.</p>
+          <p className="mt-1 text-sm text-ink-2">쓰고 있는 구독을 추가하면 이번 달 실부담과 다음 결제를 한눈에 볼 수 있어요.</p>
           <Link to="/subscriptions/new" className="btn-primary mt-4">
             <Icon name="plus" size={16} />첫 구독 추가
           </Link>
@@ -191,9 +189,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="pt-4">
-        <Backup />
-      </div>
     </div>
   )
 }

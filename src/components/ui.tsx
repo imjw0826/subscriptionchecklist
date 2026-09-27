@@ -231,10 +231,10 @@ export function PageHeader({ title, children, back }: { title: ReactNode; childr
 }
 
 /** 통계 카드 한 칸: 어두운 아이콘 박스 + 라벨 + 큰 숫자 + 상태 태그 */
-export function Stat({ icon, label, value, tag, large }: { icon: ReactNode; label: string; value: ReactNode; tag?: ReactNode; large?: boolean }) {
+export function Stat({ icon, label, value, tag, large }: { icon?: ReactNode; label: string; value: ReactNode; tag?: ReactNode; large?: boolean }) {
   return (
     <div className="flex items-center gap-3 bg-surface p-4 lg:px-5 lg:py-5">
-      <span className="icon-box hidden sm:flex">{icon}</span>
+      {icon && <span className="icon-box hidden sm:flex">{icon}</span>}
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-2">
           <p className="truncate text-sm text-ink-2">{label}</p>
@@ -302,19 +302,6 @@ const ICONS: Record<string, ReactNode> = {
     </>
   ),
   plus: <path d="M12 5v14M5 12h14" />,
-  sun: (
-    <>
-      <circle cx="12" cy="12" r="4" />
-      <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
-    </>
-  ),
-  moon: <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />,
-  monitor: (
-    <>
-      <rect x="3" y="4" width="18" height="12" rx="2" />
-      <path d="M8 20h8M12 16v4" />
-    </>
-  ),
   logout: <path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l-5-5 5-5M5 12h11" />,
   alert: (
     <>
@@ -323,8 +310,6 @@ const ICONS: Record<string, ReactNode> = {
     </>
   ),
   back: <path d="M15 18l-6-6 6-6" />,
-  download: <path d="M12 4v11M7 10l5 5 5-5M5 20h14" />,
-  upload: <path d="M12 20V9M7 14l5-5 5 5M5 4h14" />,
 }
 
 export function Icon({ name, size = 18 }: { name: keyof typeof ICONS; size?: number }) {
