@@ -23,7 +23,7 @@ Supabase 환경변수가 없으면 **로컬 모드**로 동작합니다. 데이�
 2. **SQL Editor**에 `supabase/schema.sql` 전체를 붙여넣고 **Run** — 테이블 5개와 "본인 행만 접근" 보안 정책(RLS)이 만들어집니다
 3. **Authentication → Users → Add user → Create new user**로 본인 이메일 계정 1개 생성
 4. **Authentication → Sign In / Providers**에서 *Allow new users to sign up* 끄기 (앱도 새 계정 생성을 막음)
-5. **Authentication → Emails → Magic Link** 템플릿 본문에 `{{ .Token }}` 한 줄 추가 — 메일을 다른 기기에서 열었을 때 6자리 코드로 로그인할 수 있습니다
+5. (선택) 기본 메일 템플릿은 링크만 있습니다. 커스텀 SMTP를 설정하면 **Authentication → Emails**에서 Magic Link·Confirm sign up 템플릿에 `{{ .Token }}`을 넣어 6자리 코드 로그인도 쓸 수 있습니다
 6. **Project Settings → API**에서 `Project URL`과 `anon public`(또는 publishable) 키 복사
 
 ### 2. Vercel — 웹 배포
