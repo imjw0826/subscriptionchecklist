@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { achievementLevel } from '../lib/calc'
 import type { SubscriptionStatus } from '../types'
 import { AnimatedNumber } from './motion'
-import { brandFor, isLightHex } from '../lib/brands'
+import { isLightHex, logoFor } from '../lib/brandLogos'
 
 const LEVEL_STROKE = {
   low: 'stroke-danger',
@@ -162,8 +162,24 @@ export function NumberInput({
 /** 서비스 로고 아바타 — 알려진 브랜드는 로고, 아니면 이름 이니셜(색은 이름으로 고정) */
 const AVATAR_COLORS = ['#e8793a', '#d9577a', '#8b6cf0', '#5b95ef', '#34a98a', '#d6a13c', '#c9564a', '#4aa3c2']
 export function Avatar({ name, size = 32, muted }: { name: string; size?: number; muted?: boolean }) {
-  const brand = brandFor(name)
-  if (brand) {
+  const logo = logoFor(name)
+  const gradientId = useId()
+  if (logo?.kind === 'custom') {
+    return (
+      <span
+        aria-hidden
+        title={logo.mark.title}
+        className={`inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full ring-1 ring-black/5 ${muted ? 'opacity-50' : ''}`}
+        style={{ width: size, height: size, background: logo.mark.bg }}
+      >
+        <svg viewBox="0 0 24 24" width={size} height={size}>
+          {logo.mark.draw(gradientId)}
+        </svg>
+      </span>
+    )
+  }
+  if (logo) {
+    const brand = logo.icon
     const light = isLightHex(brand.hex)
     return (
       <span
