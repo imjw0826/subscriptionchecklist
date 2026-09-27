@@ -15,31 +15,37 @@ npm run build
 
 Supabase 환경변수가 없으면 **로컬 모드**로 동작합니다. 데이터는 이 브라우저의 localStorage에만 저장되고, 첫 실행 때 샘플 데이터(넷플릭스 공유, 쿠팡와우, 네이버플러스, 유튜브 프리미엄, 연 결제 iCloud, 무료체험 밀리의 서재)가 들어갑니다.
 
-## Supabase 연결 (PC·휴대폰 동기화)
+## 배포 (Supabase + Vercel)
 
-1. [supabase.com](https://supabase.com)에서 무료 프로젝트 생성
-2. **SQL Editor**에 `supabase/schema.sql` 전체를 붙여넣고 실행 (테이블 5개 + RLS 정책)
-3. **Authentication → Users → Add user**로 본인 이메일 계정 1개 생성
-4. **Authentication → Sign In / Providers**에서 *Allow new users to sign up* 끄기 (앱에서도 `shouldCreateUser: false`로 새 계정 생성을 막음)
-5. **Authentication → URL Configuration**에서 Site URL과 Redirect URLs에 `http://localhost:5173`, 배포 주소 추가
-6. **Project Settings → API**의 URL과 anon key를 `.env.local`에 입력
+### 1. Supabase — DB와 로그인
 
-   ```bash
-   cp .env.example .env.local
-   ```
+1. [supabase.com](https://supabase.com)에서 새 프로젝트 생성 (Region: Northeast Asia (Seoul))
+2. **SQL Editor**에 `supabase/schema.sql` 전체를 붙여넣고 **Run** — 테이블 5개와 "본인 행만 접근" 보안 정책(RLS)이 만들어집니다
+3. **Authentication → Users → Add user → Create new user**로 본인 이메일 계정 1개 생성
+4. **Authentication → Sign In / Providers**에서 *Allow new users to sign up* 끄기 (앱도 새 계정 생성을 막음)
+5. **Authentication → Emails → Magic Link** 템플릿 본문에 `{{ .Token }}` 한 줄 추가 — 메일을 다른 기기에서 열었을 때 6자리 코드로 로그인할 수 있습니다
+6. **Project Settings → API**에서 `Project URL`과 `anon public`(또는 publishable) 키 복사
 
-7. `npm run dev` → 이메일 입력 → 메일의 매직링크로 로그인
+### 2. Vercel — 웹 배포
 
-로컬 모드에서 쓰던 데이터는 대시보드 하단 **JSON 내보내기** → Supabase 연결 후 **JSON 가져오기**로 옮길 수 있습니다.
+1. [vercel.com](https://vercel.com)에 GitHub로 로그인 → **Add New → Project** → `subscriptionchecklist` 저장소 **Import**
+2. Framework는 Vite로 자동 인식됩니다. **Environment Variables**에 두 개 추가 후 **Deploy**
+   - `VITE_SUPABASE_URL` = Project URL
+   - `VITE_SUPABASE_ANON_KEY` = anon public 키
+3. 배포 주소(예: `https://subscriptionchecklist.vercel.app`)를 Supabase **Authentication → URL Configuration**의 Site URL과 Redirect URLs에 추가
 
-## Vercel 배포
+이후 GitHub `main`에 push하면 자동으로 다시 배포됩니다.
 
-1. 이 폴더를 GitHub 저장소로 push
-2. Vercel → Add New Project → 저장소 선택 (Framework: Vite 자동 인식)
-3. Environment Variables에 `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` 추가 후 Deploy
-4. 배포 주소를 Supabase Redirect URLs에 추가
+### 로컬에서 클라우드 DB로 실행
 
-SPA 라우팅용 `vercel.json`(Netlify는 `public/_redirects`)이 포함되어 있습니다.
+```bash
+cp .env.example .env.local   # 두 값을 채운 뒤
+npm run dev
+```
+
+로컬 모드에서 쓰던 데이터는 대시보드 하단 **JSON 내보내기** → 배포된 사이트에서 **JSON 가져오기**로 옮길 수 있습니다.
+
+anon 키는 브라우저에 공개되는 용도의 키라 괜찮지만, `service_role` 키는 절대 앱이나 Vercel 환경변수에 넣지 마세요. 데이터 보호는 RLS 정책이 담당합니다.
 
 ## 구조
 
