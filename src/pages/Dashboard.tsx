@@ -139,6 +139,16 @@ export default function Dashboard() {
         <p className="text-sm text-ink-2">구독 {data.subscriptions.length}개</p>
       </div>
 
+      {data.subscriptions.length === 0 && (
+        <div className="panel t-reveal p-6 text-center">
+          <p className="text-lg">아직 등록된 구독이 없어요</p>
+          <p className="mt-1 text-sm text-ink-2">첫 구독을 추가하거나, 다른 곳에서 쓰던 데이터가 있다면 맨 아래 &lsquo;JSON 가져오기&rsquo;로 옮길 수 있어요.</p>
+          <Link to="/subscriptions/new" className="btn-primary mt-4">
+            <Icon name="plus" size={16} />첫 구독 추가
+          </Link>
+        </div>
+      )}
+
       {/* 보드 */}
       <div className="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-4">
         {COLUMNS.map((col) => {
