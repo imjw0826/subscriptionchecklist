@@ -30,6 +30,15 @@ describe('서비스 로고', () => {
     expect(title('네이버 VIBE 무제한 듣기')).toBe('VIBE')
     expect(title('Google One Basic (100GB)')).toBe('Google One')
   })
+  it('공식 아이콘 경로는 모두 실제 파일', () => {
+    const files = Object.keys(import.meta.glob('/public/logos/*.png')).map((f) => f.replace('/public', ''))
+    const images = catalog.services.flatMap((s) => {
+      const logo = logoFor(s.name)
+      return logo?.kind === 'custom' && logo.mark.image ? [logo.mark.image] : []
+    })
+    expect(images).toHaveLength(21)
+    expect(images.filter((i) => !files.includes(i))).toEqual([])
+  })
   it('다른 단어 속 글자에는 걸리지 않음', () => {
     expect(title('네이버플러스 멤버십 패밀리 멤버십')).toBe('Naver')
     expect(logoFor('패밀리 요금제')).toBeUndefined()

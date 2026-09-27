@@ -164,6 +164,23 @@ const AVATAR_COLORS = ['#e8793a', '#d9577a', '#8b6cf0', '#5b95ef', '#34a98a', '#
 export function Avatar({ name, size = 32, muted }: { name: string; size?: number; muted?: boolean }) {
   const logo = logoFor(name)
   const gradientId = useId()
+  const [imageFailed, setImageFailed] = useState(false)
+  if (logo?.kind === 'custom' && logo.mark.image && !imageFailed) {
+    return (
+      <img
+        src={logo.mark.image}
+        alt=""
+        aria-hidden
+        title={logo.mark.title}
+        width={size}
+        height={size}
+        loading="lazy"
+        onError={() => setImageFailed(true)}
+        className={`shrink-0 rounded-full object-cover ring-1 ring-black/5 ${muted ? 'opacity-50' : ''}`}
+        style={{ width: size, height: size }}
+      />
+    )
+  }
   if (logo?.kind === 'custom') {
     return (
       <span

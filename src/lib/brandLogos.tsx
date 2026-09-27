@@ -1,7 +1,8 @@
 /**
  * 서비스명 → 로고.
  * - simple-icons(CC0)에 있는 브랜드는 공식 아이콘 경로를 쓴다.
- * - 없는 한국 서비스는 브랜드 색과 글자로 만든 간단한 마크를 쓴다 (공식 로고 아님).
+ * - 없는 서비스는 각 회사가 App Store에 올린 공식 앱 아이콘(public/logos/*.png, 128px)을 쓰고,
+ *   이미지가 없거나 불러오지 못하면 브랜드 색과 글자로 만든 간단한 마크로 대신한다.
  * 이름에 브랜드가 여러 개면 이름에서 먼저 나오는 브랜드, 같은 위치면 더 길게 맞는 쪽을 고른다.
  */
 import type { ReactNode } from 'react'
@@ -34,6 +35,8 @@ export interface CustomMark {
   bg: string
   /** viewBox 0 0 24 24 안에 그릴 내용. id는 그라데이션 등의 고유 ID 접두사 */
   draw: (id: string) => ReactNode
+  /** 공식 앱 아이콘 경로 (있으면 우선 사용) */
+  image?: string
 }
 
 export type Logo = { kind: 'simple'; icon: SimpleIcon } | { kind: 'custom'; mark: CustomMark }
@@ -41,7 +44,17 @@ export type Logo = { kind: 'simple'; icon: SimpleIcon } | { kind: 'custom'; mark
 /** 가운데 정렬 글자 마크 */
 function letter(text: string, size: number, fill = '#fff', extra: Record<string, string | number> = {}) {
   return (
-    <text x="12" y="12.6" textAnchor="middle" dominantBaseline="central" fontSize={size} fontWeight={900} fill={fill} fontFamily="'Pretendard Variable', Pretendard, system-ui, sans-serif" {...extra}>
+    <text
+      x="12"
+      y="12.6"
+      textAnchor="middle"
+      dominantBaseline="central"
+      fontSize={size}
+      fontWeight={900}
+      fill={fill}
+      fontFamily="'Pretendard Variable', Pretendard, system-ui, sans-serif"
+      {...extra}
+    >
       {text}
     </text>
   )
@@ -67,32 +80,40 @@ function gradientLetter(id: string, text: string, size: number, stops: string[],
 }
 
 const CUSTOM: [RegExp, CustomMark][] = [
-  [/티빙|tving/i, { title: 'TVING', bg: '#FF153C', draw: () => letter('T', 14) }],
+  [/티빙|tving/i, { title: 'TVING', image: '/logos/tving.png', bg: '#FF153C', draw: () => letter('T', 14) }],
   [
     /웨이브|wavve/i,
     {
       title: 'Wavve',
+      image: '/logos/wavve.png',
       bg: '#1351F9',
       draw: () => <path d="M4.5 13.5c1.6-3.6 3.4-3.6 5 0s3.4 3.6 5 0 3.2-3.4 5-.6" fill="none" stroke="#fff" strokeWidth={2.4} strokeLinecap="round" />,
     },
   ],
-  [/디즈니|disney/i, { title: 'Disney+', bg: 'linear-gradient(135deg,#0B1541,#1D46B8)', draw: () => letter('D+', 10) }],
-  [/왓챠|watcha/i, { title: 'WATCHA', bg: '#FF0558', draw: () => letter('W', 12) }],
-  [/라프텔|laftel/i, { title: 'Laftel', bg: '#816BFF', draw: () => letter('L', 13) }],
-  [/멜론|melon/i, { title: 'Melon', bg: '#00CD3C', draw: () => letter('m', 15) }],
-  [/지니|genie/i, { title: 'genie', bg: 'linear-gradient(135deg,#34C4FF,#1F78FF)', draw: () => letter('g', 15, '#fff', { y: 11 }) }],
-  [/(?<![a-z])flo(?![a-z])|^플로/i, { title: 'FLO', bg: '#3F3FFF', draw: () => letter('FLO', 7.5, '#fff', { letterSpacing: -0.3 }) }],
-  [/네이버\s?vibe|바이브|vibe/i, { title: 'VIBE', bg: '#000', draw: (id) => gradientLetter(id, 'V', 14, ['#FF3D8B', '#8A4DFF', '#2ED0FF']) }],
-  [/벅스|bugs/i, { title: 'Bugs', bg: '#FF3C28', draw: () => letter('b', 15) }],
-  [/쿠팡|coupang/i, { title: 'Coupang', bg: '#fff', draw: (id) => gradientLetter(id, 'c', 17, ['#9E4B2B', '#E83C2F', '#F5A623', '#35B34A', '#2E8BD8']) }],
-  [/배민|배달의민족/i, { title: '배민', bg: '#2AC1BC', draw: () => letter('배민', 8) }],
-  [/요기요|요기패스/i, { title: '요기요', bg: '#FA0050', draw: () => letter('요', 12) }],
-  [/신세계|유니버스 클럽|ssg|쓱/i, { title: '신세계 유니버스 클럽', bg: '#111', draw: (id) => gradientLetter(id, 'U', 13, ['#FF4E8A', '#8C5BFF', '#3DC5FF']) }],
-  [/컬리|kurly/i, { title: 'Kurly', bg: '#5F0080', draw: () => letter('K', 12) }],
+  [/디즈니|disney/i, { title: 'Disney+', image: '/logos/disney.png', bg: 'linear-gradient(135deg,#0B1541,#1D46B8)', draw: () => letter('D+', 10) }],
+  [/왓챠|watcha/i, { title: 'WATCHA', image: '/logos/watcha.png', bg: '#FF0558', draw: () => letter('W', 12) }],
+  [/라프텔|laftel/i, { title: 'Laftel', image: '/logos/laftel.png', bg: '#816BFF', draw: () => letter('L', 13) }],
+  [/멜론|melon/i, { title: 'Melon', image: '/logos/melon.png', bg: '#00CD3C', draw: () => letter('m', 15) }],
+  [/지니|genie/i, { title: 'genie', image: '/logos/genie.png', bg: 'linear-gradient(135deg,#34C4FF,#1F78FF)', draw: () => letter('g', 15, '#fff', { y: 11 }) }],
+  [/(?<![a-z])flo(?![a-z])|^플로/i, { title: 'FLO', image: '/logos/flo.png', bg: '#3F3FFF', draw: () => letter('FLO', 7.5, '#fff', { letterSpacing: -0.3 }) }],
+  [/네이버\s?vibe|바이브|vibe/i, { title: 'VIBE', image: '/logos/vibe.png', bg: '#000', draw: (id) => gradientLetter(id, 'V', 14, ['#FF3D8B', '#8A4DFF', '#2ED0FF']) }],
+  [/벅스|bugs/i, { title: 'Bugs', image: '/logos/bugs.png', bg: '#FF3C28', draw: () => letter('b', 15) }],
+  [
+    /쿠팡|coupang/i,
+    { title: 'Coupang', image: '/logos/coupang.png', bg: '#fff', draw: (id) => gradientLetter(id, 'c', 17, ['#9E4B2B', '#E83C2F', '#F5A623', '#35B34A', '#2E8BD8']) },
+  ],
+  [/배민|배달의민족/i, { title: '배민', image: '/logos/baemin.png', bg: '#2AC1BC', draw: () => letter('배민', 8) }],
+  [/요기요|요기패스/i, { title: '요기요', image: '/logos/yogiyo.png', bg: '#FA0050', draw: () => letter('요', 12) }],
+  [
+    /신세계|유니버스 클럽|ssg|쓱/i,
+    { title: '신세계 유니버스 클럽', image: '/logos/universe.png', bg: '#111', draw: (id) => gradientLetter(id, 'U', 13, ['#FF4E8A', '#8C5BFF', '#3DC5FF']) },
+  ],
+  [/컬리|kurly/i, { title: 'Kurly', image: '/logos/kurly.png', bg: '#5F0080', draw: () => letter('K', 12) }],
   [
     /t\s?우주|우주패스/i,
     {
       title: 'T 우주',
+      image: '/logos/tuniverse.png',
       bg: 'linear-gradient(135deg,#7B3FF2,#3A1FB8)',
       draw: () => (
         <>
@@ -102,9 +123,9 @@ const CUSTOM: [RegExp, CustomMark][] = [
       ),
     },
   ],
-  [/^밀리|밀리의\s?서재|millie/i, { title: '밀리의 서재', bg: '#FFE500', draw: () => letter('m', 15, '#1A1A1A') }],
-  [/^리디|리디셀렉트|리디북스|ridi/i, { title: 'RIDI', bg: '#1F8CE6', draw: () => letter('RIDI', 6.8, '#fff', { letterSpacing: -0.2 }) }],
-  [/윌라|welaaa/i, { title: 'Welaaa', bg: '#222', draw: () => letter('W', 12) }],
+  [/^밀리|밀리의\s?서재|millie/i, { title: '밀리의 서재', image: '/logos/millie.png', bg: '#FFE500', draw: () => letter('m', 15, '#1A1A1A') }],
+  [/^리디|리디셀렉트|리디북스|ridi/i, { title: 'RIDI', image: '/logos/ridi.png', bg: '#1F8CE6', draw: () => letter('RIDI', 6.8, '#fff', { letterSpacing: -0.2 }) }],
+  [/윌라|welaaa/i, { title: 'Welaaa', image: '/logos/welaaa.png', bg: '#222', draw: () => letter('W', 12) }],
   [
     /microsoft|마이크로소프트|ms\s?365|오피스/i,
     {
@@ -120,11 +141,15 @@ const CUSTOM: [RegExp, CustomMark][] = [
       ),
     },
   ],
-  [/구글\s?원|google\s?one/i, { title: 'Google One', bg: '#fff', draw: (id) => gradientLetter(id, '1', 16, ['#4285F4', '#EA4335', '#FBBC04', '#34A853'], true) }],
+  [
+    /구글\s?원|google\s?one/i,
+    { title: 'Google One', image: '/logos/googleone.png', bg: '#fff', draw: (id) => gradientLetter(id, '1', 16, ['#4285F4', '#EA4335', '#FBBC04', '#34A853'], true) },
+  ],
   [
     /chatgpt|챗\s?gpt|openai/i,
     {
       title: 'ChatGPT',
+      image: '/logos/chatgpt.png',
       bg: '#000',
       draw: () => (
         <g fill="none" stroke="#fff" strokeWidth={1.5}>
