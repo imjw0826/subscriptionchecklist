@@ -8,6 +8,9 @@ function friendly(message: string): string {
   if (/signups not allowed|user not found/i.test(message)) return '등록되지 않은 이메일이에요.'
   if (/expired|invalid/i.test(message)) return '코드가 틀렸거나 만료됐어요. 다시 받아 주세요.'
   if (/rate limit|security purposes/i.test(message)) return '잠시 후 다시 시도해 주세요. (메일은 1분에 한 번만 보낼 수 있어요)'
+  // 브라우저별 fetch 네트워크 오류 (Safari: Load failed, Chrome: Failed to fetch, Firefox: NetworkError)
+  if (/load failed|failed to fetch|networkerror/i.test(message))
+    return '로그인 서버에 연결하지 못했어요. Supabase 프로젝트가 일시중지됐는지 확인해 주세요.'
   return message
 }
 
