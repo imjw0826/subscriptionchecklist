@@ -61,11 +61,11 @@ export default function BenefitDetail({ sub, monthly }: { sub: Subscription; mon
         <div className="mt-4 space-y-1.5 text-sm">
           <div className="flex justify-between">
             <span className="text-ink-2">이번 달 절약액</span>
-            <AnimatedNumber value={savings} format={formatWon} className="font-medium text-ok-ink" />
+            <AnimatedNumber value={savings} format={formatWon} className="num font-semibold text-ok-ink" />
           </div>
           <div className="flex justify-between">
             <span className="text-ink-2">월 실부담액</span>
-            <b>{formatWon(monthly)}</b>
+            <b className="num font-semibold">{formatWon(monthly)}</b>
           </div>
           <p className="pt-2 text-center text-xs text-ink-2">{leftToBreakEven > 0 ? `본전까지 ${formatWon(leftToBreakEven)} 남았어요` : '이번 달 본전 달성! 🎉'}</p>
         </div>
@@ -126,17 +126,17 @@ export default function BenefitDetail({ sub, monthly }: { sub: Subscription; mon
                 <div key={month}>
                   <p className="mb-1 flex justify-between text-xs font-medium text-ink-2">
                     <span>{month.replace('-', '년 ')}월</span>
-                    <span>{formatWon(list.reduce((s, u) => s + u.savedAmount, 0))}</span>
+                    <span className="num">{formatWon(list.reduce((s, u) => s + u.savedAmount, 0))}</span>
                   </p>
                   <ul className="divide-y divide-line">
                     {list.map((u) => (
                       <li key={u.id} className="t-reveal flex items-center gap-3 py-2 text-sm">
-                        <span className="w-20 shrink-0 text-ink-2">{formatDate(u.date).slice(5)}</span>
+                        <span className="num w-20 shrink-0 text-ink-2">{formatDate(u.date).slice(5)}</span>
                         <span className="min-w-0 flex-1 truncate">
                           {benefitName.get(u.benefitId) ?? '삭제된 혜택'}
                           {u.note && <span className="text-ink-2"> · {u.note}</span>}
                         </span>
-                        <b>+{formatWon(u.savedAmount)}</b>
+                        <b className="num font-semibold">+{formatWon(u.savedAmount)}</b>
                         <button className="px-1 text-ink-3 hover:text-danger-ink" aria-label="기록 삭제" onClick={() => confirm('이 기록을 삭제할까요?') && deleteBenefitUse(u.id)}>
                           ✕
                         </button>

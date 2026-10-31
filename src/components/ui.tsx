@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { achievementLevel } from '../lib/calc'
 import type { SubscriptionStatus } from '../types'
 import { AnimatedNumber } from './motion'
@@ -34,7 +34,7 @@ export function AchievementGauge({ pct, caption }: { pct: number | null; caption
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        {pct == null ? <span className="text-3xl font-medium text-ink-3">—</span> : <AnimatedNumber value={pct} format={(v) => `${v}%`} className="text-3xl font-medium tracking-tight" />}
+        {pct == null ? <span className="num text-3xl font-semibold text-ink-3">—</span> : <AnimatedNumber value={pct} format={(v) => `${v}%`} className="num text-3xl font-semibold" />}
         <span className="text-xs text-ink-2">{caption ?? '이번 달 본전'}</span>
       </div>
     </div>
@@ -114,7 +114,7 @@ export function Section({ title, children, action }: { title: string; children: 
   return (
     <section className="panel p-5">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="font-medium">{title}</h2>
+        <h2 className="text-[15px] font-semibold">{title}</h2>
         {action}
       </div>
       {children}
@@ -245,7 +245,7 @@ export function ProgressRing({ pct, size = 40 }: { pct: number | null; size?: nu
           style={{ transition: 'stroke-dasharray 600ms var(--ease-out-expo)', opacity: pct ? 1 : 0 }}
         />
       </svg>
-      <span className={`relative text-[10px] font-medium tracking-tight ${pct == null ? 'text-ink-3' : 'text-ink-2'}`}>{pct == null ? '—' : `${pct}%`}</span>
+      <span className={`num relative text-[10px] font-semibold tracking-[-0.03em] ${pct == null ? 'text-ink-3' : 'text-ink-2'}`}>{pct == null ? '—' : `${pct}%`}</span>
     </span>
   )
 }
@@ -255,10 +255,20 @@ export function PageHeader({ title, children, back }: { title: ReactNode; childr
   return (
     <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
       <div className="min-w-0">
-        {back}
-        <h1 className="truncate text-2xl font-normal tracking-tight lg:text-3xl">{title}</h1>
+        {back && (
+          <div className="t-rise" style={{ '--i': 0 } as CSSProperties}>
+            {back}
+          </div>
+        )}
+        <h1 className="t-rise truncate text-[26px] leading-tight font-semibold tracking-[-0.035em] lg:text-3xl" style={{ '--i': 1 } as CSSProperties}>
+          {title}
+        </h1>
       </div>
-      {children && <div className="flex shrink-0 items-center gap-2">{children}</div>}
+      {children && (
+        <div className="t-rise flex shrink-0 items-center gap-2" style={{ '--i': 2 } as CSSProperties}>
+          {children}
+        </div>
+      )}
     </div>
   )
 }
@@ -270,10 +280,10 @@ export function Stat({ icon, label, value, tag, large }: { icon?: ReactNode; lab
       {icon && <span className="icon-box hidden sm:flex">{icon}</span>}
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-2">
-          <p className="truncate text-sm text-ink-2">{label}</p>
+          <p className="truncate text-[13px] font-medium text-ink-2">{label}</p>
           {tag && <span className="shrink-0">{tag}</span>}
         </div>
-        <div className={`truncate font-normal tracking-tight ${large ? 'mt-0.5 text-3xl lg:text-4xl' : 'text-xl lg:text-2xl'}`}>{value}</div>
+        <div className={`num truncate font-semibold ${large ? 'mt-1 text-[34px] leading-none tracking-[-0.045em] lg:text-[40px]' : 'mt-0.5 text-xl tracking-[-0.03em] lg:text-2xl'}`}>{value}</div>
       </div>
     </div>
   )

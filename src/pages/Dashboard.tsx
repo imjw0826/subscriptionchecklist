@@ -34,9 +34,9 @@ function Column({ title, count, meta, tint, children, footer }: { title: string;
   return (
     <section className={`flex flex-col gap-2.5 rounded-3xl p-2.5 ${tint ? 'bg-accent-soft' : 'bg-sunken/70'}`}>
       <header className="flex items-center gap-2 px-1.5 pt-1">
-        <h2 className="font-medium">{title}</h2>
+        <h2 className="text-[15px] font-semibold">{title}</h2>
         {count != null && <span className="count">{count}</span>}
-        {meta && <span className="ml-auto text-xs text-ink-2">{meta}</span>}
+        {meta && <span className="num ml-auto text-xs text-ink-2">{meta}</span>}
       </header>
       {children}
       {footer}
@@ -139,7 +139,7 @@ export default function Dashboard() {
 
       {data.subscriptions.length === 0 && (
         <div className="panel t-reveal p-6 text-center">
-          <p className="text-lg">아직 등록된 구독이 없어요</p>
+          <p className="text-lg font-semibold">아직 등록된 구독이 없어요</p>
           <p className="mt-1 text-sm text-ink-2">쓰고 있는 구독을 추가하면 이번 달 실부담과 다음 결제를 한눈에 볼 수 있어요.</p>
           <Link to="/subscriptions/new" className="btn-primary mt-4">
             <Icon name="plus" size={16} />첫 구독 추가
@@ -173,15 +173,15 @@ export default function Dashboard() {
                 <div className="flex items-center gap-2.5">
                   <Avatar name={a.subscription.name} />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate">{a.subscription.name}</p>
+                    <p className="truncate text-[15px] font-medium tracking-[-0.02em]">{a.subscription.name}</p>
                     <p className="truncate text-xs text-ink-3">
                       {a.kind === 'trial' ? '체험 종료 후 첫 결제' : (pmById.get(a.subscription.paymentMethodId ?? '')?.nickname ?? '정기 결제')}
                     </p>
                   </div>
-                  <p className="font-medium">{formatWon(a.amount)}</p>
+                  <p className="num text-[15px] font-semibold tracking-[-0.02em]">{formatWon(a.amount)}</p>
                 </div>
                 <div className="mt-3 flex items-center gap-2 text-xs text-ink-3">
-                  {formatDate(a.date).slice(5)} ({weekday(a.date)})<TimePill tone={a.days <= 3 ? 'danger' : 'neutral'}>{formatDday(a.days)}</TimePill>
+                  <span className="num">{formatDate(a.date).slice(5)}</span> ({weekday(a.date)})<TimePill tone={a.days <= 3 ? 'danger' : 'neutral'}>{formatDday(a.days)}</TimePill>
                 </div>
               </Link>
             ))}

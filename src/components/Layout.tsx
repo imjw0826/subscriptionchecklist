@@ -56,7 +56,7 @@ function Skeleton() {
 }
 
 function SideLabel({ children, first }: { children: ReactNode; first?: boolean }) {
-  return <p className={`${first ? '' : 'mt-6'} mb-1.5 px-3 text-sm text-ink-3`}>{children}</p>
+  return <p className={`${first ? '' : 'mt-6'} mb-1.5 px-3 text-xs font-medium text-ink-3`}>{children}</p>
 }
 
 /** 데스크탑 사이드바 — 활성 항목 아래로 초록 pill이 미끄러진다 (Tabs sliding의 세로 버전) */
@@ -67,12 +67,12 @@ function Sidebar({ pathname }: { pathname: string }) {
   useSlidingPill(nav, pill, pathname + data.subscriptions.length)
 
   const item = ({ isActive }: { isActive: boolean }) =>
-    `t-tab flex items-center gap-3 rounded-xl px-3 py-2 text-[15px] ${isActive ? 'text-on-accent' : 'text-ink hover:bg-ink/5'}`
+    `t-tab flex items-center gap-3 rounded-xl px-3 py-2 text-sm ${isActive ? 'font-medium text-on-accent' : 'text-ink-2 hover:bg-ink/5 hover:text-ink'}`
   const subs = [...data.subscriptions].sort((a, b) => a.name.localeCompare(b.name, 'ko'))
 
   return (
     <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col overflow-y-auto border-r border-line px-4 py-6 lg:flex">
-      <NavLink to="/" className="mb-8 flex items-center gap-2.5 px-3 text-lg font-medium">
+      <NavLink to="/" className="mb-8 flex items-center gap-2.5 px-3 text-[17px] font-semibold tracking-[-0.03em]">
         <img src="/favicon.svg" alt="" className="h-7 w-7" />
         구독 체크리스트
       </NavLink>
@@ -110,7 +110,7 @@ function Sidebar({ pathname }: { pathname: string }) {
       <div className="mt-auto space-y-0.5 pt-6">
         {mode === 'local' && <p className="mb-3 rounded-xl bg-sunken px-3 py-2 text-xs leading-relaxed text-ink-2">로컬 모드 — 이 브라우저에만 저장돼요.</p>}
         {supabase && (
-          <button onClick={() => supabase!.auth.signOut()} className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-[15px] text-ink hover:bg-ink/5">
+          <button onClick={() => supabase!.auth.signOut()} className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-ink-2 hover:bg-ink/5 hover:text-ink">
             <Icon name="logout" />
             로그아웃
           </button>

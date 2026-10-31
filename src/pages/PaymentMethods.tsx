@@ -94,7 +94,7 @@ export default function PaymentMethods() {
                 )}
               </div>
               <div className="mt-4 flex items-end justify-between">
-                <p className="text-3xl tracking-tight">
+                <p className="num text-3xl font-semibold">
                   <AnimatedNumber value={st.monthly} format={formatWon} />
                   <span className="ml-1 text-sm text-ink-2">/월</span>
                 </p>

@@ -57,15 +57,15 @@ export default function UsageDetail({ sub, monthly }: { sub: Subscription; month
         <div className="mt-4 space-y-1.5 text-sm">
           <div className="flex justify-between">
             <span className="text-ink-2">이번 달 누적</span>
-            <AnimatedNumber value={usage} format={fmt} className="font-medium" />
+            <AnimatedNumber value={usage} format={fmt} className="num font-semibold" />
           </div>
           <div className="flex justify-between">
             <span className="text-ink-2">본전 기준</span>
-            <b>{sub.usageTarget > 0 ? fmt(sub.usageTarget) : '미설정'}</b>
+            <b className="num font-semibold">{sub.usageTarget > 0 ? fmt(sub.usageTarget) : '미설정'}</b>
           </div>
           <div className="flex justify-between">
             <span className="text-ink-2">{isMinutes ? '시간당 비용' : '회당 비용'}</span>
-            <b>{unitCost == null ? '—' : formatWon(unitCost)}</b>
+            <b className="num font-semibold">{unitCost == null ? '—' : formatWon(unitCost)}</b>
           </div>
           {sub.usageTarget > usage && <p className="pt-2 text-center text-xs text-ink-2">본전까지 {fmt(sub.usageTarget - usage)} 남았어요</p>}
         </div>
@@ -129,9 +129,9 @@ export default function UsageDetail({ sub, monthly }: { sub: Subscription; month
                 <li key={date} className="t-reveal py-2">
                   <div className="flex items-center justify-between text-sm">
                     <span className="font-medium">
-                      {formatDate(date)} <span className="font-normal text-ink-2">({weekday(date)})</span>
+                      <span className="num">{formatDate(date)}</span> <span className="font-normal text-ink-2">({weekday(date)})</span>
                     </span>
-                    <b>{fmt(list.reduce((s, l) => s + l.amount, 0))}</b>
+                    <b className="num font-semibold">{fmt(list.reduce((s, l) => s + l.amount, 0))}</b>
                   </div>
                   <div className="mt-1 flex flex-wrap gap-1.5">
                     {list.map((l) => (
