@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { AppData, TableName } from '../types'
 import { createSampleData } from '../data/sample'
+import { withRetry } from './retry'
 
 type Row = { id: string } & Record<string, unknown>
 
@@ -91,17 +92,13 @@ function rowFromDb(row: Record<string, unknown>): Row {
 }
 
 export function createSupabaseRepo(client: SupabaseClient): Repository {
-  const check = (error: { message: string } | null) => {
-    if (error) throw new Error(error.message)
-  }
   return {
     kind: 'supabase',
     async loadAll() {
       const data = emptyData()
       await Promise.all(
         TABLES.map(async (t) => {
-          const { data: rows, error } = await client.from(SQL_TABLE[t]).select('*')
-          check(error)
+          const rows = await withRetry(() => client.from(SQL_TABLE[t]).select('*'))
           ;(data[t] as unknown as Row[]) = (rows ?? []).map(rowFromDb)
         }),
       )
@@ -109,13 +106,11 @@ export function createSupabaseRepo(client: SupabaseClient): Repository {
     },
     async upsert(table, rows) {
       if (rows.length === 0) return
-      const { error } = await client.from(SQL_TABLE[table]).upsert(rows.map(rowToDb))
-      check(error)
+      await withRetry(() => client.from(SQL_TABLE[table]).upsert(rows.map(rowToDb)))
     },
     async remove(table, ids) {
       if (ids.length === 0) return
-      const { error } = await client.from(SQL_TABLE[table]).delete().in('id', ids)
-      check(error)
+      await withRetry(() => client.from(SQL_TABLE[table]).delete().in('id', ids))
     },
   }
 }

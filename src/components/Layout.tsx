@@ -5,6 +5,7 @@ import { supabase } from '../store/supabase'
 import { useSlidingPill } from './motion'
 import { Avatar, Icon } from './ui'
 import { diffDays } from '../lib/date'
+import { friendlyError } from '../store/retry'
 
 /** 경로 깊이로 페이지 진입 방향을 정한다: 깊어지면 오른쪽에서(1), 얕아지면 왼쪽에서(-1) */
 function usePageDirection(pathname: string): number {
@@ -166,10 +167,13 @@ export default function Layout() {
 
           {error && (
             <div className="flex items-start gap-2 px-4 pt-4 lg:px-8">
-              <div className="t-reveal flex flex-1 items-center gap-2 rounded-2xl bg-danger-soft px-4 py-3 text-sm text-danger-ink">
+              <div className="t-reveal flex flex-1 items-center gap-2 rounded-2xl bg-danger-soft px-4 py-3 text-sm text-danger-ink" role="alert" title={error}>
                 <Icon name="alert" size={16} />
-                저장 중 오류가 발생했어요: {error}
+                {friendlyError(error)}
               </div>
+              <button className="btn-ghost" onClick={() => window.location.reload()}>
+                새로고침
+              </button>
               <button className="btn-ghost" onClick={dismissError}>
                 닫기
               </button>
