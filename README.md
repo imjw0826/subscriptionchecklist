@@ -21,9 +21,9 @@ Supabase 환경변수가 없으면 **로컬 모드**로 동작합니다. 데이�
 
 1. [supabase.com](https://supabase.com)에서 새 프로젝트 생성 (Region: Northeast Asia (Seoul))
 2. **SQL Editor**에 `supabase/schema.sql` 전체를 붙여넣고 **Run** — 테이블 5개와 "본인 행만 접근" 보안 정책(RLS)이 만들어집니다
-3. **Authentication → Users → Add user → Create new user**에서 `아이디@subscriptionchecklist.vercel.app` 형식의 이메일과 비밀번호로 계정 1개 생성 (*Auto Confirm User* 켜기). 메일은 오가지 않고 앱에서는 `아이디`만 입력합니다
-4. **Authentication → Sign In / Providers**에서 *Allow new users to sign up* 끄기 (앱에도 가입 화면이 없음)
-5. 실제 이메일을 그대로 아이디로 써도 됩니다. 입력값에 `@`가 있으면 이메일로 로그인합니다
+3. **Authentication → Sign In / Providers**에서 *Allow new users to sign up*을 켜고 **Confirm email을 끄기**. 아이디는 메일이 오가지 않는 내부 주소라 이메일 확인을 끝낼 수 없습니다
+4. 앱의 **회원가입** 버튼으로 아이디와 비밀번호를 만듭니다. 주소를 아는 사람은 누구나 가입할 수 있고, 데이터는 RLS로 계정별로 분리됩니다
+5. 입력값에 `@`가 있으면 이메일로 로그인합니다
 6. **Project Settings → API**에서 `Project URL`과 `anon public`(또는 publishable) 키 복사
 
 ### 2. Vercel — 웹 배포
