@@ -62,13 +62,13 @@ anon 키는 브라우저에 공개되는 용도의 키라 괜찮지만, `service
 
 ```
 src/
-  types.ts                 데이터 모델 (Subscription, PaymentMethod, Benefit, UsageLog)
+  types.ts                 데이터 모델 (Subscription, PaymentMethod)
   lib/calc.ts              계산 규칙 (순수 함수) + calc.test.ts
   lib/date.ts, format.ts   날짜(월말 보정, D-day)·금액 포맷
   store/repo.ts            저장소 추상화: localStorage / Supabase
   store/StoreContext.tsx   앱 상태와 CRUD, 지난 결제일 자동 갱신
   pages/                   대시보드, 상세, 구독 추가·편집, 결제수단, 로그인
-  components/              구독 표, 결제 달력, 이용형 상세, 요금제 안내, 모션·토스트, 공통 UI
+  components/              구독 표, 결제 달력, 요금제 안내, 모션·토스트, 공통 UI
 supabase/schema.sql        테이블 + RLS
 ```
 
@@ -80,7 +80,15 @@ supabase/schema.sql        테이블 + RLS
 - **연 환산**: 월 환산액(반올림)×12가 아니라 주기당 금액×12/주기로 계산해 반올림 오차를 없앴습니다.
 - **임시구독**: 해지예정 구독을 뜻합니다. 대시보드에서 무료체험과 같은 표에 나오고, 끝나면 더 내지 않으므로 종료 후 월 금액은 0원입니다.
 - **결제 달력**: 구독중은 결제 주기로 이번 달 결제일을 계산해 이미 지난 날짜도 표시합니다. 무료체험은 종료일의 첫 결제만, 해지예정과 0원 구독은 표시하지 않습니다.
-- **혜택 안내**: 혜택 체크리스트는 없앴고, 카탈로그 요금제의 혜택을 줄글로 보여줍니다. 카탈로그에 없는 구독은 예전에 등록한 혜택 이름을 문장으로 보여줍니다. `benefits`, `benefit_uses` 테이블과 기존 기록은 그대로 남겨 둡니다.
+- **혜택 안내**: 카탈로그에서 고른 요금제의 혜택을 줄글로 보여줍니다. 카탈로그에 없는 구독은 메모를 씁니다.
+- **정리된 데이터**: 상세 유형, 본전 기준, 이용 기록, 혜택 체크 기능은 없앴습니다. DB의 `benefits`, `benefit_uses`, `usage_logs` 테이블과 `subscriptions`의 `detail_type`, `usage_unit`, `usage_target` 열은 앱에서 쓰지 않을 뿐 그대로 남아 있습니다.
+
+## 디자인
+
+- [shadcn/ui](https://ui.shadcn.com): inset 사이드바, 표, 탭, 로그인 구성과 밀도
+- [Arc UI](https://uiarc.dev): 무채색 oklch 색, 그림자, 시간 토큰, 지표 카드, 빈 상태, 키보드 포커스
+- [affectUI](https://affectui.com): 차분한 수치 중심 구성 (토큰이 공개돼 있지 않아 구성만 참고)
+- [transitions.dev](https://transitions.dev): 숫자 등장, 탭 이동, 모달, 토스트, 툴팁 등 모션
 
 ## 서비스 로고
 

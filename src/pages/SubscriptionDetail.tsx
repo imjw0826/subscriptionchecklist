@@ -1,11 +1,9 @@
 import { Link, useParams } from 'react-router-dom'
 import { useStore } from '../store/StoreContext'
-import { baselineMonthlyCost, monthlyCost, postTrialPrice } from '../lib/calc'
+import { costPerCycle, monthlyCost, monthlyCostAfterTrial, postTrialPrice } from '../lib/calc'
 import { diffDays, formatDate, formatDday } from '../lib/date'
 import { formatWon, paymentLabel } from '../lib/format'
-import { Avatar, Icon, PageHeader, Stat, StatGroup, StatusBadge } from '../components/ui'
-import BenefitNote from '../components/BenefitNote'
-import UsageDetail from '../components/UsageDetail'
+import { Avatar, Icon, MetricCard, PageHeader, StatusBadge, TimePill } from '../components/ui'
 import PlanInfo from '../components/PlanInfo'
 
 export default function SubscriptionDetail() {
@@ -27,13 +25,14 @@ export default function SubscriptionDetail() {
   const pm = data.paymentMethods.find((p) => p.id === sub.paymentMethodId)
   const isTrial = sub.status === 'trial'
   const price = isTrial ? postTrialPrice(sub) : sub.listPrice
-  const monthly = baselineMonthlyCost(sub)
+  const monthly = isTrial ? monthlyCostAfterTrial(sub) : monthlyCost(sub)
+  const perCycle = costPerCycle(sub, price)
   const dateLabel = isTrial ? '체험 종료' : sub.status === 'canceling' ? '해지 예정' : '다음 결제'
   const date = isTrial && sub.trialEndDate ? sub.trialEndDate : sub.nextBillingDate
   const days = diffDays(today, date)
 
   return (
-    <div className="mx-auto max-w-6xl space-y-5">
+    <div className="mx-auto max-w-4xl space-y-6">
       <PageHeader
         back={
           <Link to="/" className="link mb-2 inline-flex items-center gap-1 text-sm">
@@ -48,41 +47,27 @@ export default function SubscriptionDetail() {
             <StatusBadge status={sub.status} />
           </span>
         }
+        description={[sub.category, paymentLabel(pm)].filter(Boolean).join(' · ')}
       >
         <Link to={`/subscriptions/${sub.id}/edit`} className="btn-ghost">
           편집
         </Link>
       </PageHeader>
-      <p className="-mt-3 text-sm text-ink-2">
-        {sub.category ? `${sub.category} · ` : ''}
-        {paymentLabel(pm)}
-      </p>
 
-      <StatGroup cols={3}>
-        <Stat
-          icon={<Icon name="card" />}
-          label={isTrial ? '종료 후 정가' : '정가'}
-          value={
-            <>
-              <span className="text-base text-ink-2">{sub.cycleMonths}개월 </span>
-              {formatWon(price)}
-            </>
-          }
-        />
-        <Stat icon={<Icon name="wallet" />} label={isTrial ? '종료 후 월 실부담' : '월 실부담'} value={formatWon(isTrial ? monthly : monthlyCost(sub))} />
-        <Stat
-          icon={<Icon name="clock" />}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 [&>*:last-child]:col-span-2 sm:[&>*:last-child]:col-span-1">
+        <MetricCard label={isTrial ? '종료 후 정가' : '정가'} value={formatWon(price)} context={`${sub.cycleMonths}개월마다 결제`} />
+        <MetricCard label={isTrial ? '종료 후 월 실부담' : '월 실부담'} value={formatWon(monthly)} context={sub.cycleMonths > 1 ? `${sub.cycleMonths}개월 ${formatWon(perCycle)}` : '매달 결제'} />
+        <MetricCard
           label={dateLabel}
           value={formatDate(date).slice(5)}
-          tag={<span className={days < 0 || days <= 3 ? 'tag-danger' : 'tag-neutral'}>{days >= 0 ? formatDday(days) : '종료됨'}</span>}
+          context={`${formatDate(date).slice(0, 4)}년`}
+          chip={<TimePill tone={days <= 3 ? 'danger' : 'neutral'}>{days >= 0 ? formatDday(days) : '종료됨'}</TimePill>}
         />
-      </StatGroup>
+      </div>
 
-      {sub.memo && <p className="rounded-2xl bg-sunken px-4 py-3 text-sm whitespace-pre-wrap text-ink-2">{sub.memo}</p>}
+      {sub.memo && <p className="rounded-lg bg-sunken px-4 py-3 text-sm whitespace-pre-wrap text-ink-2">{sub.memo}</p>}
 
-      {sub.detailType === 'usage' && <UsageDetail sub={sub} monthly={monthly} />}
-
-      {sub.catalogId ? <PlanInfo catalogId={sub.catalogId} /> : sub.detailType === 'benefit' && <BenefitNote subscriptionId={sub.id} />}
+      {sub.catalogId && <PlanInfo catalogId={sub.catalogId} />}
     </div>
   )
 }

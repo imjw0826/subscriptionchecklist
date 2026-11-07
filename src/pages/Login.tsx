@@ -58,10 +58,14 @@ export default function Login() {
   const invalid = error ? 'input-error' : ''
 
   return (
-    <div className="flex min-h-dvh items-center justify-center bg-app px-4">
-      <div className="panel t-reveal w-full max-w-sm p-8">
-        <img src="/favicon.svg" alt="" className="mb-4 h-10 w-10" />
-        <h1 className="text-2xl font-semibold">{isSignup ? '회원가입' : '구독 체크리스트'}</h1>
+    <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-app px-4 py-10">
+      <div className="flex items-center gap-2 font-semibold">
+        <img src="/favicon.svg" alt="" className="h-6 w-6" />
+        구독 체크리스트
+      </div>
+      <div className="card t-reveal w-full max-w-sm p-6">
+        <h1 className="text-lg font-semibold">{isSignup ? '회원가입' : '로그인'}</h1>
+        <p className="mt-0.5 text-sm text-ink-2">{isSignup ? '사용할 아이디와 비밀번호를 정해 주세요.' : '아이디와 비밀번호를 입력해 주세요.'}</p>
 
         <form onSubmit={submit} noValidate className="mt-5 space-y-4">
           <label className="block">
@@ -98,7 +102,7 @@ export default function Login() {
             </Collapse>
           </div>
           {error && (
-            <p role="alert" className="t-error-msg text-sm text-danger-ink">
+            <p role="alert" className="t-error-msg text-sm text-danger">
               {error}
             </p>
           )}

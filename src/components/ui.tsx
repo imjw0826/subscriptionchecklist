@@ -1,45 +1,6 @@
 import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from 'react'
-import { achievementLevel } from '../lib/calc'
 import type { SubscriptionStatus } from '../types'
-import { AnimatedNumber } from './motion'
 import { isLightHex, logoFor } from '../lib/brandLogos'
-
-const LEVEL_STROKE = {
-  low: 'stroke-danger',
-  mid: 'stroke-warn',
-  high: 'stroke-ok',
-  none: 'stroke-ink-3',
-}
-
-/** 상세페이지용 원형 게이지 */
-export function AchievementGauge({ pct, caption }: { pct: number | null; caption?: string }) {
-  const level = achievementLevel(pct)
-  const r = 52
-  const c = 2 * Math.PI * r
-  const filled = (Math.min(pct ?? 0, 100) / 100) * c
-  return (
-    <div className="relative mx-auto h-40 w-40">
-      <svg viewBox="0 0 120 120" className="h-full w-full -rotate-90">
-        <circle cx="60" cy="60" r={r} fill="none" strokeWidth="10" className="stroke-sunken" />
-        <circle
-          cx="60"
-          cy="60"
-          r={r}
-          fill="none"
-          strokeWidth="10"
-          strokeLinecap="round"
-          strokeDasharray={`${filled} ${c}`}
-          className={LEVEL_STROKE[level]}
-          style={{ transition: 'stroke-dasharray 600ms var(--ease-out-expo), stroke 250ms' }}
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        {pct == null ? <span className="num text-3xl font-semibold text-ink-3">—</span> : <AnimatedNumber value={pct} format={(v) => `${v}%`} className="num text-3xl font-semibold" />}
-        <span className="text-xs text-ink-2">{caption ?? '이번 달 본전'}</span>
-      </div>
-    </div>
-  )
-}
 
 export function StatusBadge({ status }: { status: SubscriptionStatus }) {
   if (status === 'trial') return <span className="tag-warn">체험</span>
@@ -90,10 +51,10 @@ export function Modal({ open, onClose, title, children }: { open: boolean; onClo
         role="dialog"
         aria-modal="true"
         aria-label={last.current.title}
-        className="t-modal relative w-full max-w-md rounded-3xl bg-surface p-6 shadow-2xl shadow-black/10"
+        className="t-modal relative w-full max-w-md rounded-xl border border-line bg-surface p-6 shadow-floating"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="mb-5 text-lg font-medium">{last.current.title}</h2>
+        <h2 className="mb-5 text-base font-semibold">{last.current.title}</h2>
         {last.current.children}
       </div>
     </div>
@@ -105,7 +66,7 @@ export function Field({ label, error, children, hint }: { label: string; error?:
     <label className="block">
       <span className="label">{label}</span>
       {children}
-      {error ? <span className="t-error-msg mt-1.5 block text-xs text-danger-ink">{error}</span> : hint ? <span className="mt-1.5 block text-xs text-ink-3">{hint}</span> : null}
+      {error ? <span className="t-error-msg mt-1.5 block text-xs text-danger">{error}</span> : hint ? <span className="mt-1.5 block text-xs text-ink-3">{hint}</span> : null}
     </label>
   )
 }
@@ -114,11 +75,25 @@ export function Section({ title, children, action }: { title: string; children: 
   return (
     <section className="panel p-5">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-[15px] font-semibold">{title}</h2>
+        <h2 className="text-sm font-semibold">{title}</h2>
         {action}
       </div>
       {children}
     </section>
+  )
+}
+
+/** 첫 화면·빈 목록: 아이콘, 제목, 설명, 행동 하나 (Arc Empty state) */
+export function EmptyState({ icon, title, description, action }: { icon: keyof typeof ICONS; title: string; description: string; action?: ReactNode }) {
+  return (
+    <div className="t-reveal flex flex-col items-center px-5 py-12 text-center">
+      <span className="flex h-12 w-12 items-center justify-center rounded-xl border border-line bg-sunken text-ink-2">
+        <Icon name={icon} size={20} />
+      </span>
+      <h3 className="mt-5 text-base font-medium">{title}</h3>
+      <p className="mt-1.5 max-w-[20rem] text-sm text-balance text-ink-2">{description}</p>
+      {action && <div className="mt-5">{action}</div>}
+    </div>
   )
 }
 
@@ -225,18 +200,23 @@ export function Avatar({ name, size = 32, muted }: { name: string; size?: number
 }
 
 /** 페이지 제목 + 오른쪽 액션 */
-export function PageHeader({ title, children, back }: { title: ReactNode; children?: ReactNode; back?: ReactNode }) {
+export function PageHeader({ title, description, children, back }: { title: ReactNode; description?: ReactNode; children?: ReactNode; back?: ReactNode }) {
   return (
-    <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+    <div className="flex flex-wrap items-end justify-between gap-3">
       <div className="min-w-0">
         {back && (
           <div className="t-rise" style={{ '--i': 0 } as CSSProperties}>
             {back}
           </div>
         )}
-        <h1 className="t-rise truncate text-[26px] leading-tight font-semibold tracking-[-0.035em] lg:text-3xl" style={{ '--i': 1 } as CSSProperties}>
+        <h1 className="num t-rise truncate text-xl font-semibold lg:text-2xl" style={{ '--i': 1 } as CSSProperties}>
           {title}
         </h1>
+        {description && (
+          <p className="t-rise mt-0.5 text-sm text-ink-2" style={{ '--i': 2 } as CSSProperties}>
+            {description}
+          </p>
+        )}
       </div>
       {children && (
         <div className="t-rise flex shrink-0 items-center gap-2" style={{ '--i': 2 } as CSSProperties}>
@@ -247,42 +227,26 @@ export function PageHeader({ title, children, back }: { title: ReactNode; childr
   )
 }
 
-/** 통계 카드 한 칸: 어두운 아이콘 박스 + 라벨 + 큰 숫자 + 상태 태그 */
-export function Stat({ icon, label, value, tag, large }: { icon?: ReactNode; label: string; value: ReactNode; tag?: ReactNode; large?: boolean }) {
+/** 지표 카드: 라벨, 큰 숫자, 맥락 한 줄 (Arc Metric card) */
+export function MetricCard({ label, value, context, chip }: { label: string; value: ReactNode; context?: ReactNode; chip?: ReactNode }) {
   return (
-    <div className="flex items-center gap-3 bg-surface p-4 lg:px-5 lg:py-5">
-      {icon && <span className="icon-box hidden sm:flex">{icon}</span>}
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center justify-between gap-2">
-          <p className="truncate text-[13px] font-medium text-ink-2">{label}</p>
-          {tag && <span className="shrink-0">{tag}</span>}
-        </div>
-        <div className={`num truncate font-semibold ${large ? 'mt-1 text-[34px] leading-none tracking-[-0.045em] lg:text-[40px]' : 'mt-0.5 text-xl tracking-[-0.03em] lg:text-2xl'}`}>{value}</div>
+    <article className="card min-w-0 p-4 lg:p-5">
+      <div className="flex min-h-[22px] items-center justify-between gap-2">
+        <h2 className="truncate text-sm font-normal text-ink-2">{label}</h2>
+        {chip}
       </div>
-    </div>
+      <div className="num mt-2.5 truncate text-[1.625rem] leading-tight font-semibold tracking-[-0.03em]">{value}</div>
+      {context && <p className="mt-1.5 truncate text-[13px] text-ink-3">{context}</p>}
+    </article>
   )
 }
 
-/** 통계 카드 묶음 — 칸 사이에 세로 구분선 */
-export function StatGroup({ children, cols = 4 }: { children: ReactNode; cols?: 3 | 4 }) {
-  // 홀수 개면 모바일에서 마지막 칸이 두 칸을 차지해 빈 칸이 생기지 않게 한다
-  return (
-    <div
-      className={`grid grid-cols-2 gap-px overflow-hidden rounded-3xl bg-line shadow-card [&>*:last-child:nth-child(odd)]:col-span-2 ${cols === 3 ? 'lg:grid-cols-3' : 'lg:grid-cols-4'} lg:[&>*]:col-span-1!`}
-    >
-      {children}
-    </div>
-  )
-}
+// Tailwind가 찾을 수 있도록 클래스 이름을 조합하지 않고 그대로 적는다
+const TONES = { neutral: 'tag-neutral', warn: 'tag-warn', danger: 'tag-danger', ok: 'tag-ok' }
 
-/** 시계 아이콘이 붙은 D-day 알약 */
+/** D-day 태그 */
 export function TimePill({ children, tone = 'neutral' }: { children: ReactNode; tone?: 'neutral' | 'warn' | 'danger' | 'ok' }) {
-  return (
-    <span className={`tag-${tone}`}>
-      <Icon name="clock" size={12} />
-      {children}
-    </span>
-  )
+  return <span className={`num ${TONES[tone]}`}>{children}</span>
 }
 
 const ICONS: Record<string, ReactNode> = {
@@ -293,6 +257,7 @@ const ICONS: Record<string, ReactNode> = {
       <path d="M3 10h18M7 15h3" />
     </>
   ),
+  list: <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />,
   wallet: (
     <>
       <path d="M19 7V5.5A1.5 1.5 0 0 0 17.5 4h-12A2.5 2.5 0 0 0 3 6.5v11A2.5 2.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5V16" />
@@ -309,13 +274,6 @@ const ICONS: Record<string, ReactNode> = {
     <>
       <circle cx="12" cy="12" r="9" />
       <path d="M12 7v5l3 2" />
-    </>
-  ),
-  target: (
-    <>
-      <circle cx="12" cy="12" r="9" />
-      <circle cx="12" cy="12" r="5" />
-      <circle cx="12" cy="12" r="1" />
     </>
   ),
   plus: <path d="M12 5v14M5 12h14" />,

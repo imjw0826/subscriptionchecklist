@@ -1,6 +1,6 @@
 import { useState, type FormEvent, type ReactNode } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import type { DetailType, DiscountType, Subscription, SubscriptionStatus, UsageUnit } from '../types'
+import type { DiscountType, Subscription, SubscriptionStatus } from '../types'
 import { useStore } from '../store/StoreContext'
 import { costPerCycle, monthlyCost } from '../lib/calc'
 import { addMonths } from '../lib/date'
@@ -9,7 +9,7 @@ import { Field, Icon, NumberInput, PageHeader } from '../components/ui'
 import { Collapse, Segmented, shakeErrors } from '../components/motion'
 import { useToast } from '../components/Toast'
 import CatalogSearch from '../components/CatalogSearch'
-import { defaultDetail, subscriptionName, type CatalogPlan, type PriceOption } from '../lib/catalog'
+import { subscriptionName, type CatalogPlan, type PriceOption } from '../lib/catalog'
 import { useCatalog } from '../lib/useCatalog'
 
 type Num = number | ''
@@ -30,10 +30,6 @@ interface Draft {
   shareMode: 'split' | 'fixed'
   shareCount: Num
   myShareOverride: Num
-  detailType: DetailType
-  usageUnit: UsageUnit
-  /** count면 회, minutes면 시간 단위로 입력 */
-  usageTargetInput: Num
   memo: string
   catalogId: string | null
 }
@@ -59,9 +55,6 @@ function toDraft(sub: Subscription | undefined, today: string): Draft {
       shareMode: 'split',
       shareCount: 1,
       myShareOverride: '',
-      detailType: 'usage',
-      usageUnit: 'count',
-      usageTargetInput: '',
       memo: '',
       catalogId: null,
     }
@@ -83,9 +76,6 @@ function toDraft(sub: Subscription | undefined, today: string): Draft {
     shareMode: sub.myShareOverride != null ? 'fixed' : 'split',
     shareCount: sub.shareCount,
     myShareOverride: sub.myShareOverride ?? '',
-    detailType: sub.detailType,
-    usageUnit: sub.usageUnit,
-    usageTargetInput: sub.usageTarget ? (sub.usageUnit === 'minutes' ? +(sub.usageTarget / 60).toFixed(2) : sub.usageTarget) : '',
     memo: sub.memo,
     catalogId: sub.catalogId ?? null,
   }
@@ -122,7 +112,6 @@ function validate(d: Draft): Errors {
   if (d.shareMode === 'split' && !(d.shareCount !== '' && Number.isInteger(d.shareCount) && d.shareCount >= 1 && d.shareCount <= 100))
     e.shareCount = '공유 인원은 1명 이상이어야 해요'
   if (d.shareMode === 'fixed' && !nonNeg(d.myShareOverride)) e.myShareOverride = '내가 내는 금액을 입력하세요'
-  if (d.detailType === 'usage' && (d.usageTargetInput === '' || d.usageTargetInput <= 0)) e.usageTarget = '본전 기준을 0보다 크게 입력하세요'
   return e
 }
 
@@ -131,7 +120,7 @@ const Chips = Segmented
 function FormSection({ title, children }: { title: string; children: ReactNode }) {
   return (
     <fieldset className="panel space-y-4 p-5">
-      <legend className="float-left mb-1 w-full text-lg">{title}</legend>
+      <legend className="float-left mb-2 w-full text-sm font-semibold">{title}</legend>
       {children}
     </fieldset>
   )
@@ -166,7 +155,6 @@ export default function SubscriptionForm() {
   const cycleMonths = d.cyclePreset === 'custom' ? Number(d.customCycle) || 1 : Number(d.cyclePreset)
 
   const toSubscription = (): Subscription => {
-    const usageTarget = d.usageTargetInput === '' ? 0 : d.usageUnit === 'minutes' ? Math.round(d.usageTargetInput * 60) : Math.round(d.usageTargetInput)
     return {
       id: existing?.id ?? newId(),
       name: d.name.trim(),
@@ -182,26 +170,20 @@ export default function SubscriptionForm() {
       discountValue: d.discountType === 'none' ? 0 : Number(d.discountValue) || 0,
       shareCount: d.shareMode === 'split' ? Number(d.shareCount) || 1 : 1,
       myShareOverride: d.shareMode === 'fixed' ? Number(d.myShareOverride) || 0 : null,
-      detailType: d.detailType,
-      usageUnit: d.usageUnit,
-      usageTarget: d.detailType === 'usage' ? usageTarget : 0,
       memo: d.memo.trim(),
       catalogId: d.catalogId,
     }
   }
 
-  /** 카탈로그 요금제를 고르면 이름·카테고리·가격·주기·상세 유형을 채운다 */
+  /** 카탈로그 요금제를 고르면 이름·카테고리·가격·주기를 채운다 */
   function applyPlan(plan: CatalogPlan) {
     const price = plan.prices[0]
-    const detail = defaultDetail(plan)
     setD((p) => ({
       ...p,
       name: subscriptionName(plan),
       category: plan.category,
       catalogId: plan.id,
       ...(price ? { listPrice: price.price, ...cycleDraft(price.cycleMonths) } : { listPrice: '' }),
-      detailType: detail.detailType,
-      usageUnit: detail.usageUnit,
     }))
     toast(`${subscriptionName(plan)} 요금제 정보를 불러왔어요`)
   }
@@ -244,7 +226,7 @@ export default function SubscriptionForm() {
   }
 
   return (
-    <form onSubmit={submit} noValidate className="mx-auto max-w-xl space-y-4">
+    <form onSubmit={submit} noValidate className="mx-auto max-w-xl space-y-4 pb-2">
       <PageHeader
         title={existing ? '구독 편집' : '구독 추가'}
         back={
@@ -256,12 +238,12 @@ export default function SubscriptionForm() {
       />
 
       <FormSection title="기본 정보">
-        <Field label="서비스명" error={err('name')} hint={linkedPlan ? undefined : '목록에서 고르면 가격과 혜택이 채워져요. 목록에 없으면 이름만 입력하세요.'}>
+        <Field label="서비스명" error={err('name')} hint={linkedPlan ? undefined : '목록에서 고르면 가격이 채워지고 상세 화면에 혜택이 안내돼요. 목록에 없으면 이름만 입력하세요.'}>
           <CatalogSearch value={d.name} onChange={(v) => set('name', v)} onPick={applyPlan} invalid={!!err('name')} />
         </Field>
         <Collapse open={!!linkedPlan}>
           {linkedPlan && (
-            <div className="mb-1 space-y-2 rounded-2xl bg-accent-soft p-3 text-sm">
+            <div className="mb-1 space-y-2 rounded-lg bg-sunken p-3 text-sm">
               <div className="flex items-start gap-2">
                 <span className="min-w-0 flex-1">
                   <b className="font-medium">
@@ -435,62 +417,14 @@ export default function SubscriptionForm() {
             </Collapse>
           </div>
         </div>
-        <div className="flex items-center justify-between rounded-2xl bg-accent-soft px-4 py-3 text-sm">
+        <div className="flex items-center justify-between rounded-lg bg-sunken px-4 py-3 text-sm">
           <span className="text-ink-2">
             {d.status === 'trial' ? '체험 종료 후 ' : ''}실부담액{cycleMonths > 1 ? ` (${cycleMonths}개월 ${formatWon(perCycle)})` : ''}
           </span>
-          <span className="text-lg font-medium">
+          <span className="num text-base font-semibold">
             월 {formatWon(monthly)}
             {monthlyList !== monthly && <span className="ml-1.5 text-xs font-medium text-ink-3 line-through">{formatWon(monthlyList)}</span>}
           </span>
-        </div>
-      </FormSection>
-
-      <FormSection title="상세 유형과 본전 기준">
-        <Chips<DetailType>
-          value={d.detailType}
-          onChange={(v) => set('detailType', v)}
-          options={[
-            { value: 'benefit', label: '혜택 안내형' },
-            { value: 'usage', label: '이용 추적형' },
-          ]}
-        />
-        <p className="text-xs text-ink-2">
-          {d.detailType === 'benefit'
-            ? '쿠팡와우·네이버플러스처럼 혜택이 중심인 구독이에요. 상세 페이지에서 요금제 혜택을 글로 안내해요. 목록에 없는 서비스는 메모에 적어 두세요.'
-            : '유튜브 프리미엄·클라우드처럼 이용 횟수나 시간을 기록해요. 이번 달 이용량 ÷ 본전 기준이 달성률이에요.'}
-        </p>
-
-        <div>
-          <Collapse open={d.detailType === 'usage'}>
-            <div className="space-y-4">
-              <div>
-                <span className="label">측정 단위</span>
-                <Chips<UsageUnit>
-                  value={d.usageUnit}
-                  onChange={(v) => set('usageUnit', v)}
-                  options={[
-                    { value: 'count', label: '횟수' },
-                    { value: 'minutes', label: '이용시간' },
-                  ]}
-                />
-              </div>
-              <Field
-                label="본전 기준 (월)"
-                error={err('usageTarget')}
-                hint={d.usageUnit === 'minutes' ? '이만큼 쓰면 본전이라고 생각하는 월 이용시간. 스크린타임을 보고 기록하세요.' : '이만큼 쓰면 본전이라고 생각하는 월 이용 횟수'}
-              >
-                <NumberInput
-                  value={d.usageTargetInput}
-                  onChange={(v) => set('usageTargetInput', v)}
-                  suffix={d.usageUnit === 'minutes' ? '시간' : '회'}
-                  min={0}
-                  step={d.usageUnit === 'minutes' ? 0.5 : 1}
-                  invalid={!!err('usageTarget')}
-                />
-              </Field>
-            </div>
-          </Collapse>
         </div>
       </FormSection>
 
@@ -498,9 +432,9 @@ export default function SubscriptionForm() {
         <textarea className="input min-h-20" value={d.memo} onChange={(e) => set('memo', e.target.value)} maxLength={500} placeholder="선택" />
       </FormSection>
 
-      {submitted && Object.keys(errors).length > 0 && <p className="text-center text-sm text-danger-ink">입력값을 확인해주세요.</p>}
+      {submitted && Object.keys(errors).length > 0 && <p className="text-center text-sm text-danger">입력값을 확인해주세요.</p>}
 
-      <div className="sticky bottom-3 z-10 flex gap-2 rounded-2xl bg-surface/90 p-2 shadow-lg shadow-black/5 ring-1 ring-line backdrop-blur">
+      <div className="sticky bottom-3 z-10 flex gap-2 rounded-xl bg-surface/90 p-2 shadow-raised ring-1 ring-line backdrop-blur">
         {existing && (
           <button type="button" className="btn-danger" onClick={remove}>
             삭제

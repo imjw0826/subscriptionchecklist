@@ -33,33 +33,34 @@ function DayCell({
 }) {
   const isToday = date === today
   const isPast = date < today
-  const ring = selected ? 'ring-2 ring-primary ring-offset-2 ring-offset-surface' : isToday ? 'ring-2 ring-accent ring-offset-2 ring-offset-surface' : ''
+  const ring = selected ? 'ring-2 ring-primary ring-offset-2 ring-offset-surface' : isToday ? 'ring-1 ring-line-strong ring-offset-2 ring-offset-surface' : ''
 
   if (payments.length === 0) {
     return (
-      <div className="flex h-12 items-center justify-center sm:h-14" aria-label={dayLabel(date, payments)}>
-        <span className={`num flex h-[34px] w-[34px] items-center justify-center rounded-full text-sm ${ring} ${isPast ? 'text-ink-3' : 'text-ink-2'}`}>{parseISO(date).d}</span>
+      <div className="flex aspect-square max-h-14 w-full items-center justify-center" aria-label={dayLabel(date, payments)}>
+        <span className={`num flex h-[34px] w-[34px] items-center justify-center rounded-full text-sm ${ring} ${isToday ? 'font-semibold text-ink' : isPast ? 'text-ink-3' : 'text-ink-2'}`}>{parseISO(date).d}</span>
       </div>
     )
   }
 
   return (
-    <div className="flex h-12 items-center justify-center sm:h-14">
-      <button
-        type="button"
-        aria-label={dayLabel(date, payments)}
-        aria-pressed={selected}
-        title={payments.map((p) => `${p.subscription.name} ${formatWon(p.amount)}`).join('\n')}
-        onClick={onSelect}
-        style={{ '--i': index } as CSSProperties}
-        className={`t-pop rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ink/30 ${ring}`}
-      >
+    <div className="t-tip-host relative flex aspect-square max-h-14 w-full items-center justify-center">
+      <button type="button" aria-label={dayLabel(date, payments)} aria-pressed={selected} onClick={onSelect} style={{ '--i': index } as CSSProperties} className={`t-pop rounded-full ${ring}`}>
         {payments.length === 1 ? (
           <Avatar name={payments[0].subscription.name} size={MARK_SIZE} muted={isPast} />
         ) : (
           <span className={`num flex h-[34px] w-[34px] items-center justify-center rounded-full bg-primary text-sm font-semibold text-on-primary ${isPast ? 'opacity-50' : ''}`}>{payments.length}</span>
         )}
       </button>
+      {/* Tooltip open / close: 어떤 구독인지는 칸에 다 못 보여주므로 올리면 알려준다 */}
+      <div aria-hidden className="t-tip w-max max-w-56 space-y-1 rounded-lg border border-line bg-surface px-2.5 py-2 text-xs shadow-raised">
+        {payments.map((p) => (
+          <p key={p.subscription.id} className="flex items-center justify-between gap-4">
+            <span className="truncate">{p.subscription.name}</span>
+            <span className="num font-medium">{formatWon(p.amount)}</span>
+          </p>
+        ))}
+      </div>
     </div>
   )
 }
@@ -83,13 +84,13 @@ export default function PaymentCalendar({ subscriptions, today }: { subscription
   let markIndex = 0
 
   return (
-    <section className="panel overflow-hidden" aria-label={`${m}월 결제 달력`}>
-      <div className="grid lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
+    <section className="panel" aria-label={`${m}월 결제 달력`}>
+      <div className="grid lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
         <div className="p-5">
-          <h2 className="mb-3 text-[15px] font-semibold">
+          <h2 className="mb-4 text-base font-semibold">
             <span className="num">{m}</span>월 결제 달력
           </h2>
-          <div className="grid grid-cols-7 text-center text-xs font-medium text-ink-3">
+          <div className="grid grid-cols-7 text-center text-xs text-ink-3">
             {WEEKDAYS.map((w) => (
               <span key={w} className="pb-1">
                 {w}
@@ -116,7 +117,7 @@ export default function PaymentCalendar({ subscriptions, today }: { subscription
           </div>
         </div>
 
-        <div className="flex min-w-0 flex-col border-t border-line bg-sunken/30 p-5 lg:border-t-0 lg:border-l">
+        <div className="flex min-w-0 flex-col rounded-b-xl border-t border-line bg-sunken/60 p-5 lg:rounded-r-xl lg:rounded-bl-none lg:border-t-0 lg:border-l">
           <div className="mb-2 flex items-center justify-between gap-2">
             <h3 className="text-sm font-semibold">{activeDate ? `${parseISO(activeDate).d}일 결제` : '이번 달 결제'}</h3>
             {activeDate && (
@@ -142,7 +143,7 @@ export default function PaymentCalendar({ subscriptions, today }: { subscription
                           <span className="num">{formatDate(p.date).slice(5)}</span> ({weekday(p.date)}){p.kind === 'trial' ? ' · 체험 종료 후 첫 결제' : ''}
                         </span>
                       </span>
-                      <span className={`num font-semibold tracking-[-0.02em] ${past ? 'text-ink-2' : ''}`}>{formatWon(p.amount)}</span>
+                      <span className={`num font-medium ${past ? 'text-ink-2' : ''}`}>{formatWon(p.amount)}</span>
                     </Link>
                   </li>
                 )
@@ -152,7 +153,7 @@ export default function PaymentCalendar({ subscriptions, today }: { subscription
 
           <p className="mt-2 flex items-center justify-between border-t border-line pt-3 text-sm">
             <span className="font-medium text-ink-2">{activeDate ? '합계' : '이번 달 합계'}</span>
-            <b className="num text-[15px] font-semibold tracking-[-0.02em]">{formatWon(total)}</b>
+            <b className="num font-semibold">{formatWon(total)}</b>
           </p>
         </div>
       </div>

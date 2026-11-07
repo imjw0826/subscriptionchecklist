@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import md from '../data/catalog.md?raw'
-import { benefitParagraphs, defaultDetail, parseCatalog, parsePrices, searchCatalog, subscriptionName } from './catalog'
+import { benefitParagraphs, parseCatalog, parsePrices, searchCatalog, subscriptionName } from './catalog'
 
 const catalog = parseCatalog(md)
 const plan = (service: number, name: string) => catalog.plans.find((p) => p.serviceNo === service && p.plan === name)!
@@ -115,11 +115,6 @@ describe('구독으로 변환', () => {
     expect(subscriptionName(plan(15, '와우 멤버십'))).toBe('쿠팡 와우 멤버십')
     expect(subscriptionName(plan(1, '프리미엄'))).toBe('넷플릭스 프리미엄')
     expect(subscriptionName(plan(29, '이모티콘 플러스'))).toBe('카카오 이모티콘 플러스')
-  })
-  it('쇼핑 멤버십은 혜택형, OTT는 분 단위 이용형', () => {
-    expect(defaultDetail(plan(17, '월간 이용권'))).toEqual({ detailType: 'benefit', usageUnit: 'count' })
-    expect(defaultDetail(plan(1, '프리미엄'))).toEqual({ detailType: 'usage', usageUnit: 'minutes' })
-    expect(defaultDetail(plan(28, 'Plus'))).toEqual({ detailType: 'usage', usageUnit: 'count' })
   })
   it('혜택 줄글: 모든 혜택을 문장으로 잇고 네 문장씩 문단을 나눈다', () => {
     const wow = plan(15, '와우 멤버십')

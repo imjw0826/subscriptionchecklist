@@ -11,8 +11,6 @@ export interface TableRow {
   date: string
   /** 표의 금액 칸 값이자 합계에 더해지는 값 */
   amount: number
-  /** 금액 아래 작은 글씨 (예: 12개월 44,000원) */
-  amountNote?: string
   /** 이름 옆 상태 태그 */
   badge?: ReactNode
   /** D-day 등 날짜 옆 표시 */
@@ -20,9 +18,11 @@ export interface TableRow {
 }
 
 const headCell = 'h-10 px-3 text-left text-xs font-medium text-ink-2 first:pl-5 last:pr-5 last:text-right'
-const bodyCell = 'px-3 py-3 first:pl-5 last:pr-5 last:text-right'
+const bodyCell = 'px-3 py-2.5 first:pl-5 last:pr-5 last:text-right'
 
-/** 구독 목록 표. 좁은 화면에서는 결제수단과 날짜 칸을 숨기고 날짜를 이름 아래로 옮긴다 */
+const cycleLabel = (months: number) => (months === 1 ? '매달' : months === 12 ? '매년' : `${months}개월`)
+
+/** 구독 목록 표 (shadcn Table). 좁은 화면에서는 부가 칸을 숨기고 날짜를 이름 아래로 옮긴다 */
 export default function SubscriptionTable({
   title,
   rows,
@@ -42,21 +42,24 @@ export default function SubscriptionTable({
 
   return (
     <section className="panel overflow-hidden" aria-label={title}>
-      <header className="flex items-center gap-2 px-5 pt-4 pb-3">
-        <h2 className="text-[15px] font-semibold">{title}</h2>
+      <header className="flex h-12 items-center gap-2 px-5">
+        <h2 className="text-sm font-semibold">{title}</h2>
         <span className="count">{rows.length}</span>
       </header>
 
       <table className="w-full table-fixed border-collapse text-sm">
         <thead>
-          <tr className="border-y border-line bg-sunken/40">
+          <tr className="border-y border-line bg-sunken/60">
             <th scope="col" className={headCell}>
               서비스
             </th>
-            <th scope="col" className={`${headCell} hidden w-32 md:table-cell`}>
+            <th scope="col" className={`${headCell} hidden w-40 lg:table-cell`}>
               결제수단
             </th>
-            <th scope="col" className={`${headCell} hidden w-40 sm:table-cell`}>
+            <th scope="col" className={`${headCell} hidden w-24 lg:table-cell`}>
+              주기
+            </th>
+            <th scope="col" className={`${headCell} hidden w-44 sm:table-cell`}>
               {dateLabel}
             </th>
             <th scope="col" className={`${headCell} w-[8.5rem]`}>
@@ -68,7 +71,7 @@ export default function SubscriptionTable({
         <tbody className="divide-y divide-line">
           {rows.length === 0 ? (
             <tr>
-              <td colSpan={4} className="px-5 py-8 text-center text-ink-3">
+              <td colSpan={5} className="px-5 py-8 text-center text-ink-3">
                 {empty}
               </td>
             </tr>
@@ -76,7 +79,7 @@ export default function SubscriptionTable({
             rows.map((r) => {
               const muted = r.sub.status === 'canceling'
               return (
-                <tr key={r.sub.id} className="relative transition-colors duration-150 hover:bg-sunken/50">
+                <tr key={r.sub.id} className="relative transition-colors duration-150 hover:bg-sunken/60">
                   <td className={bodyCell}>
                     <div className="flex items-center gap-3">
                       <Avatar name={r.sub.name} muted={muted} />
@@ -85,7 +88,7 @@ export default function SubscriptionTable({
                           {/* 링크 영역을 행 전체로 넓힌다 */}
                           <Link
                             to={`/subscriptions/${r.sub.id}`}
-                            className={`min-w-0 truncate font-medium outline-none after:absolute after:inset-0 focus-visible:after:rounded-sm focus-visible:after:ring-2 focus-visible:after:ring-ink/20 focus-visible:after:ring-inset ${muted ? 'text-ink-2' : ''}`}
+                            className={`min-w-0 truncate font-medium outline-none after:absolute after:inset-0 focus-visible:after:ring-2 focus-visible:after:ring-ink/30 focus-visible:after:ring-inset ${muted ? 'text-ink-2' : ''}`}
                           >
                             {r.sub.name}
                           </Link>
@@ -98,17 +101,15 @@ export default function SubscriptionTable({
                       </div>
                     </div>
                   </td>
-                  <td className={`${bodyCell} hidden truncate text-ink-2 md:table-cell`}>{r.paymentName}</td>
+                  <td className={`${bodyCell} hidden truncate text-ink-2 lg:table-cell`}>{r.paymentName}</td>
+                  <td className={`${bodyCell} hidden text-ink-2 lg:table-cell`}>{cycleLabel(r.sub.cycleMonths)}</td>
                   <td className={`${bodyCell} hidden whitespace-nowrap sm:table-cell`}>
                     <span className="flex items-center gap-2">
-                      <span className="num text-ink-2">{formatDate(r.date).slice(5)}</span>
+                      <span className="num w-10 text-ink-2">{formatDate(r.date).slice(5)}</span>
                       {r.dateTag}
                     </span>
                   </td>
-                  <td className={`${bodyCell} whitespace-nowrap`}>
-                    <p className="num font-semibold tracking-[-0.02em]">{formatWon(r.amount)}</p>
-                    {r.amountNote && <p className="num text-xs text-ink-3">{r.amountNote}</p>}
-                  </td>
+                  <td className={`${bodyCell} num font-medium whitespace-nowrap`}>{formatWon(r.amount)}</td>
                 </tr>
               )
             })
@@ -116,13 +117,14 @@ export default function SubscriptionTable({
         </tbody>
 
         <tfoot>
-          <tr className="border-t border-line bg-sunken/40">
-            <th scope="row" className={`${bodyCell} text-left font-medium text-ink-2`}>
+          <tr className="border-t border-line bg-sunken/60">
+            <th scope="row" className={`${bodyCell} text-left font-medium`}>
               {totalLabel}
             </th>
-            <td className="hidden md:table-cell" />
+            <td className="hidden lg:table-cell" />
+            <td className="hidden lg:table-cell" />
             <td className="hidden sm:table-cell" />
-            <td className={`${bodyCell} num text-[15px] font-semibold tracking-[-0.02em]`}>{formatWon(total)}</td>
+            <td className={`${bodyCell} num font-semibold whitespace-nowrap`}>{formatWon(total)}</td>
           </tr>
         </tfoot>
       </table>

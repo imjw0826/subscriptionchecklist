@@ -38,15 +38,14 @@ export default function PlanInfo({ catalogId }: { catalogId: string }) {
   const service = catalog.services.find((s) => s.no === plan.serviceNo)!
 
   return (
-    <Section title="요금제 안내" action={<span className="text-xs text-ink-3">{formatDate(catalog.researchedAt)} 조사</span>}>
+    <Section title="혜택 안내" action={<span className="text-xs text-ink-3">{formatDate(catalog.researchedAt)} 조사</span>}>
       <p className="mb-1 font-medium">
         {plan.service} · {plan.plan}
         {plan.supplemented && <span className="tag-warn ml-1.5 align-middle">공식 외 보완</span>}
       </p>
       <p className="mb-4 text-sm whitespace-pre-line text-ink-2">{plan.priceText}</p>
 
-      <h3 className="mb-1.5 text-sm font-semibold">이런 혜택이 있어요</h3>
-      <div className="max-w-[68ch] space-y-2.5 text-sm leading-7 text-ink-2">
+      <div className="max-w-[68ch] space-y-3 text-sm leading-7 text-ink-2">
         {benefitParagraphs(plan).map((text, i) => (
           <p key={i}>{text}</p>
         ))}

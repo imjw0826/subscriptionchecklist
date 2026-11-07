@@ -1,18 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import type { Subscription } from '../types'
 import {
-  achievementLevel,
   computeTotals,
   costPerCycle,
-  costPerUnit,
   monthlyCost,
-  monthlyUsage,
   paymentsInMonth,
   rollBillingDate,
   subscriptionsToRoll,
   subtotalsByPaymentMethod,
   upcomingAlerts,
-  usageAchievement,
 } from './calc'
 import { addMonths, diffDays, monthCells } from './date'
 
@@ -32,9 +28,6 @@ function sub(p: Partial<Subscription> = {}): Subscription {
     discountValue: 0,
     shareCount: 1,
     myShareOverride: null,
-    detailType: 'benefit',
-    usageUnit: 'count',
-    usageTarget: 0,
     memo: '',
     catalogId: null,
     ...p,
@@ -99,32 +92,6 @@ describe('월 총액', () => {
   it('결제수단 미지정은 null 그룹', () => {
     const result = subtotalsByPaymentMethod([sub()], [])
     expect(result).toEqual([{ paymentMethodId: null, monthly: 10000, subscriptionIds: ['s1'] }])
-  })
-})
-
-describe('달성률', () => {
-  it('이용형 달성률', () => {
-    const logs = [
-      { id: 'l1', subscriptionId: 's1', date: '2026-09-01', amount: 600 },
-      { id: 'l2', subscriptionId: 's1', date: '2026-09-15', amount: 900 },
-      { id: 'l3', subscriptionId: 's1', date: '2026-10-01', amount: 900 },
-    ]
-    const usage = monthlyUsage(logs, 's1', '2026-09-26')
-    expect(usage).toBe(1500)
-    expect(usageAchievement(usage, 1200)).toBe(125)
-    expect(usageAchievement(usage, 0)).toBeNull()
-  })
-  it('색 구간', () => {
-    expect(achievementLevel(49)).toBe('low')
-    expect(achievementLevel(50)).toBe('mid')
-    expect(achievementLevel(99)).toBe('mid')
-    expect(achievementLevel(100)).toBe('high')
-    expect(achievementLevel(null)).toBe('none')
-  })
-  it('회당·시간당 비용', () => {
-    expect(costPerUnit(12000, 4, 'count')).toBe(3000)
-    expect(costPerUnit(12000, 90, 'minutes')).toBe(8000)
-    expect(costPerUnit(12000, 0, 'count')).toBeNull()
   })
 })
 

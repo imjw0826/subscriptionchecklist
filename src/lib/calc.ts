@@ -1,9 +1,9 @@
 /**
- * 금액·달성률 계산 규칙 (PRD "데이터 모델과 계산 규칙").
+ * 금액 계산 규칙 (PRD "데이터 모델과 계산 규칙").
  * UI와 분리된 순수 함수만 둔다.
  */
-import type { ISODate, PaymentMethod, Subscription, UsageLog } from '../types'
-import { addMonths, diffDays, isSameMonth, monthKey, parseISO } from './date'
+import type { ISODate, PaymentMethod, Subscription } from '../types'
+import { addMonths, diffDays, monthKey, parseISO } from './date'
 
 type PriceFields = Pick<
   Subscription,
@@ -38,14 +38,6 @@ export function postTrialPrice(sub: Subscription): number {
 /** 무료체험 종료 후 월 환산 실부담액 */
 export function monthlyCostAfterTrial(sub: Subscription): number {
   return monthlyCost(sub, postTrialPrice(sub))
-}
-
-/**
- * 달성률 계산에 쓰는 기준 월 부담액.
- * 체험 중이면 0원이라 달성률이 무의미하므로 체험 종료 후 금액을 기준으로 삼는다.
- */
-export function baselineMonthlyCost(sub: Subscription): number {
-  return sub.status === 'trial' ? monthlyCostAfterTrial(sub) : monthlyCost(sub)
 }
 
 export interface Totals {
@@ -90,29 +82,6 @@ export function subtotalsByPaymentMethod(subs: Subscription[], methods: PaymentM
     if (s.status === 'active') entry.monthly += monthlyCost(s)
   }
   return [...map.values()]
-}
-
-/** 이번 달 이용량 합계 (횟수 또는 분) */
-export function monthlyUsage(logs: UsageLog[], subscriptionId: string, today: ISODate): number {
-  return logs
-    .filter((l) => l.subscriptionId === subscriptionId && isSameMonth(l.date, today))
-    .reduce((sum, l) => sum + l.amount, 0)
-}
-
-/** 이용형 달성률 = 이번 달 이용량 ÷ usageTarget × 100. 목표가 0이면 null */
-export function usageAchievement(usage: number, target: number): number | null {
-  if (target <= 0) return null
-  return Math.round((usage / target) * 100)
-}
-
-export type AchievementLevel = 'low' | 'mid' | 'high' | 'none'
-
-/** 50% 미만 빨강, 50~99% 노랑, 100% 이상 초록 */
-export function achievementLevel(pct: number | null): AchievementLevel {
-  if (pct == null) return 'none'
-  if (pct < 50) return 'low'
-  if (pct < 100) return 'mid'
-  return 'high'
 }
 
 /**
@@ -197,10 +166,4 @@ export function paymentsInMonth(subs: Subscription[], month: string): CalendarPa
     }
   }
   return list.filter((p) => p.amount > 0).sort((a, b) => a.date.localeCompare(b.date) || a.subscription.name.localeCompare(b.subscription.name, 'ko'))
-}
-
-/** 이용형: 회당 비용 또는 시간당 비용. 이용량이 0이면 null */
-export function costPerUnit(monthly: number, usage: number, unit: 'count' | 'minutes'): number | null {
-  if (usage <= 0) return null
-  return Math.round(unit === 'count' ? monthly / usage : monthly / (usage / 60))
 }

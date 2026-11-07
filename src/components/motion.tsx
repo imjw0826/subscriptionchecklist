@@ -90,8 +90,8 @@ export function Segmented<T extends string>({
   const pill = useRef<HTMLSpanElement>(null)
   useSlidingPill(bar, pill, value)
   return (
-    <div ref={bar} role="tablist" aria-label={label} className={`t-tabs flex flex-wrap gap-1 rounded-2xl bg-sunken p-1 ${className}`}>
-      <span ref={pill} aria-hidden className="t-tabs-pill rounded-xl bg-primary shadow-sm" />
+    <div ref={bar} role="tablist" aria-label={label} className={`t-tabs flex flex-wrap gap-0.5 rounded-lg bg-sunken p-0.5 ${className}`}>
+      <span ref={pill} aria-hidden className="t-tabs-pill rounded-md bg-surface shadow-[0_1px_2px_oklch(0%_0_0/0.08)] ring-1 ring-line" />
       {options.map((o) => (
         <button
           type="button"
@@ -99,7 +99,7 @@ export function Segmented<T extends string>({
           key={o.value}
           aria-selected={value === o.value}
           onClick={() => onChange(o.value)}
-          className={`t-tab flex-1 rounded-xl px-2.5 py-1.5 text-sm whitespace-nowrap ${value === o.value ? 'text-on-primary' : 'text-ink-2 hover:text-ink'}`}
+          className={`t-tab flex-1 rounded-md px-3 py-1 text-sm font-medium whitespace-nowrap ${value === o.value ? 'text-ink' : 'text-ink-2 hover:text-ink'}`}
         >
           {o.label}
         </button>

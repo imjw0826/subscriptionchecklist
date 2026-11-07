@@ -13,10 +13,10 @@ export interface Repository {
   remove(table: TableName, ids: string[]): Promise<void>
 }
 
-export const TABLES: TableName[] = ['paymentMethods', 'subscriptions', 'benefits', 'usageLogs']
+export const TABLES: TableName[] = ['paymentMethods', 'subscriptions']
 
 export function emptyData(): AppData {
-  return { subscriptions: [], paymentMethods: [], benefits: [], usageLogs: [] }
+  return { subscriptions: [], paymentMethods: [] }
 }
 
 // ---------- 로컬 모드 ----------
@@ -70,8 +70,6 @@ export function createLocalRepo(): Repository {
 const SQL_TABLE: Record<TableName, string> = {
   subscriptions: 'subscriptions',
   paymentMethods: 'payment_methods',
-  benefits: 'benefits',
-  usageLogs: 'usage_logs',
 }
 
 const toSnake = (k: string) => k.replace(/[A-Z]/g, (c) => '_' + c.toLowerCase())
@@ -81,10 +79,13 @@ function rowToDb(row: Row): Record<string, unknown> {
   return Object.fromEntries(Object.entries(row).map(([k, v]) => [toSnake(k), v]))
 }
 
+/** DB에는 남아 있지만 앱에서 쓰지 않는 열. 읽지 않아야 저장할 때 되돌려 보내지 않는다 */
+const DB_ONLY = new Set(['user_id', 'created_at', 'detail_type', 'usage_unit', 'usage_target'])
+
 function rowFromDb(row: Record<string, unknown>): Row {
   const out: Record<string, unknown> = {}
   for (const [k, v] of Object.entries(row)) {
-    if (k === 'user_id' || k === 'created_at') continue
+    if (DB_ONLY.has(k)) continue
     out[toCamel(k)] = v
   }
   return out as Row

@@ -3,7 +3,6 @@
  * 문서 형식: `# N. 서비스` → `## 서비스 | 요금제` → `- 가격:` / `- 포함 혜택:` / `- 유의사항:` / `### 서비스 참고`
  * 문서를 고치면 앱의 검색 목록도 그대로 바뀐다.
  */
-import type { DetailType, UsageUnit } from '../types'
 
 export interface CatalogItem {
   text: string
@@ -328,13 +327,6 @@ export function subscriptionName(plan: CatalogPlan): string {
     if (sw.slice(-k).join(' ') === pw.slice(0, k).join(' ')) return [...sw, ...pw.slice(k)].join(' ')
   }
   return `${s} ${p}`
-}
-
-/** 쇼핑·배달 멤버십과 T우주는 혜택 안내형, 나머지는 이용 추적형 */
-export function defaultDetail(plan: CatalogPlan): { detailType: DetailType; usageUnit: UsageUnit } {
-  if (plan.group.startsWith('쇼핑')) return { detailType: 'benefit', usageUnit: 'count' }
-  const minutes = plan.group === 'OTT' || plan.group === '음악' || plan.group.startsWith('도서')
-  return { detailType: 'usage', usageUnit: minutes ? 'minutes' : 'count' }
 }
 
 /** 혜택 하나를 문장으로: "이름 : 설명" → "이름: 설명.", 하위 항목은 쉼표로 잇는다 */

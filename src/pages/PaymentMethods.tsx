@@ -4,7 +4,7 @@ import type { PaymentMethod, PaymentMethodType } from '../types'
 import { useStore } from '../store/StoreContext'
 import { monthlyCost, subtotalsByPaymentMethod } from '../lib/calc'
 import { formatWon, newId } from '../lib/format'
-import { Avatar, Empty, Field, Icon, Modal, PageHeader, StatusBadge } from '../components/ui'
+import { Avatar, EmptyState, Field, Icon, Modal, PageHeader, StatusBadge } from '../components/ui'
 import { AnimatedNumber, Segmented, shakeErrors } from '../components/motion'
 import { useToast } from '../components/Toast'
 
@@ -63,8 +63,8 @@ export default function PaymentMethods() {
   const cards = subtotals.map((st) => ({ st, pm: data.paymentMethods.find((p) => p.id === st.paymentMethodId) })).filter(({ st, pm }) => pm || st.subscriptionIds.length > 0)
 
   return (
-    <div className="mx-auto max-w-6xl space-y-5">
-      <PageHeader title="결제수단">
+    <div className="space-y-6">
+      <PageHeader title="결제수단" description="카드와 계좌별 월 결제액을 봅니다.">
         <button className="btn-primary" onClick={() => open()}>
           <Icon name="plus" size={16} />
           결제수단
@@ -73,32 +73,32 @@ export default function PaymentMethods() {
 
       {cards.length === 0 ? (
         <div className="panel">
-          <Empty>등록된 결제수단이 없어요.</Empty>
+          <EmptyState icon="card" title="등록된 결제수단이 없어요" description="카드나 계좌를 추가하면 수단별 월 결제액을 볼 수 있어요." />
         </div>
       ) : (
         <div className="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-3">
           {cards.map(({ st, pm }) => (
             <section key={st.paymentMethodId ?? 'none'} className="panel p-5">
               <div className="flex items-center gap-3">
-                <span className={pm ? 'icon-box' : 'icon-box bg-sunken text-ink-3'}>
+                <span className="icon-box">
                   <Icon name={pm?.type === 'card' ? 'card' : 'wallet'} />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate">{pm ? pm.nickname : '결제수단 없음'}</p>
+                  <p className="truncate font-medium">{pm ? pm.nickname : '결제수단 없음'}</p>
                   <p className="text-xs text-ink-3">{pm ? `${TYPE_LABEL[pm.type]}${pm.last4 ? ` · •••• ${pm.last4}` : ''}` : '미지정 구독'}</p>
                 </div>
                 {pm && (
-                  <button className="btn-ghost px-3 py-1.5" onClick={() => open(pm)}>
+                  <button className="btn-ghost h-8 px-2.5" onClick={() => open(pm)}>
                     편집
                   </button>
                 )}
               </div>
               <div className="mt-4 flex items-end justify-between">
-                <p className="num text-3xl font-semibold">
+                <p className="num text-[1.625rem] leading-tight font-semibold tracking-[-0.03em]">
                   <AnimatedNumber value={st.monthly} format={formatWon} />
-                  <span className="ml-1 text-sm text-ink-2">/월</span>
+                  <span className="ml-1 text-sm font-normal tracking-normal text-ink-3">/월</span>
                 </p>
-                <span className="tag-neutral mb-1.5">구독 {st.subscriptionIds.length}개</span>
+                <span className="tag-neutral">구독 {st.subscriptionIds.length}개</span>
               </div>
               {st.subscriptionIds.length > 0 && (
                 <ul className="mt-4 space-y-1 border-t border-line pt-3 text-sm">
@@ -106,11 +106,11 @@ export default function PaymentMethods() {
                     const s = subById.get(id)!
                     return (
                       <li key={id}>
-                        <Link to={`/subscriptions/${id}`} className="-mx-2 flex items-center gap-2.5 rounded-xl px-2 py-1.5 transition hover:bg-sunken">
+                        <Link to={`/subscriptions/${id}`} className="-mx-2 flex items-center gap-2.5 rounded-md px-2 py-1.5 transition-colors hover:bg-sunken">
                           <Avatar name={s.name} size={24} muted={s.status === 'canceling'} />
                           <span className="min-w-0 flex-1 truncate">{s.name}</span>
                           <StatusBadge status={s.status} />
-                          <span className={s.status === 'active' ? '' : 'text-ink-3'}>{formatWon(monthlyCost(s))}</span>
+                          <span className={`num ${s.status === 'active' ? '' : 'text-ink-3'}`}>{formatWon(monthlyCost(s))}</span>
                         </Link>
                       </li>
                     )

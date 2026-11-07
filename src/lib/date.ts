@@ -47,10 +47,6 @@ export function monthKey(date: ISODate): string {
   return date.slice(0, 7)
 }
 
-export function isSameMonth(a: ISODate, b: ISODate): boolean {
-  return monthKey(a) === monthKey(b)
-}
-
 /** YYYY.MM.DD */
 export function formatDate(date: ISODate | null | undefined): string {
   return date ? date.replaceAll('-', '.') : '-'

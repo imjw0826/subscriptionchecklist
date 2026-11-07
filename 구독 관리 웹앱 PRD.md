@@ -4,7 +4,7 @@ Sep 25, 2026 · @garden
 
 ## 개요와 목표
 
-나 혼자 쓰는 정기구독 관리 웹앱이다. 매달 실제로 얼마를 내는지, 구독마다 본전을 뽑고 있는지를 한 화면에서 확인하는 것이 목표다.
+나 혼자 쓰는 정기구독 관리 웹앱이다. 매달 실제로 얼마를 내는지, 이번 달 언제 무엇이 결제되는지를 한 화면에서 확인하는 것이 목표다.
 
 - **사용자**: 본인 위주. 회원가입 후 아이디·비밀번호로 로그인하고, 데이터는 계정별로 분리
 - **해결할 문제**: 구독이 여러 결제수단에 흩어져 있어 총액을 모르고, 무료체험 자동결제를 놓치고, 쿠팡와우·네이버플러스 같은 혜택형 구독을 절반도 못 쓴다
@@ -12,10 +12,10 @@ Sep 25, 2026 · @garden
 
 ## 핵심 기능
 
-MVP는 아래 7개 기능이다. 모두 수동 입력 기반이며 외부 서비스 연동은 없다.
+MVP는 아래 6개 기능이다. 모두 수동 입력 기반이며 외부 서비스 연동은 없다.
 
 1. **구독 등록·편집·삭제**
-   - 입력: 서비스명, 카테고리, 정가, 결제주기, 다음 결제일, 결제수단, 상태(구독중 / 무료체험 / 해지예정), 상세 유형
+   - 입력: 서비스명, 카테고리, 정가, 결제주기, 다음 결제일, 결제수단, 상태(구독중 / 무료체험 / 해지예정)
 2. **결제주기와 월 환산**
    - 주기는 1개월, 3개월, 6개월, 12개월 또는 직접 입력(N개월)
    - 주기가 1개월보다 길면 금액을 주기로 나눠 월 환산액으로도 표시 (예: 연 60,000원 → 월 5,000원)
@@ -30,12 +30,8 @@ MVP는 아래 7개 기능이다. 모두 수동 입력 기반이며 외부 서비
 5. **월 총액**
    - 모든 활성 구독의 월 환산 실부담액 합계와 연 환산 합계
    - 결제수단별 소계
-6. **상세페이지 2유형**
-   - **혜택 안내형** (쿠팡와우, 네이버플러스 등): 요금제의 혜택을 줄글로 안내. 혜택별 체크와 절약액 기록은 하지 않음
-   - **이용 추적형** (유튜브 프리미엄, 클라우드 등): 측정 단위를 횟수 또는 이용시간(분) 중 선택. 이용시간은 휴대폰 스크린타임을 보고 직접 입력 (웹앱은 휴대폰 앱 사용시간을 자동으로 읽을 수 없음)
-7. **본전 달성률**
-   - 이용 추적형 상세페이지에 이번 달 달성률(%)을 게이지로 표시
-   - 계산식은 데이터 모델 섹션 참고
+6. **상세페이지**
+   - 카탈로그에서 고른 요금제의 혜택을 줄글로 안내하고, 유의사항과 출처를 함께 보여줌
 
 ## 화면 구성
 
@@ -43,7 +39,7 @@ MVP는 아래 7개 기능이다. 모두 수동 입력 기반이며 외부 서비
 
 ```mermaid
 flowchart LR
-  D[대시보드] --> S[상세페이지<br/>혜택형 / 이용형]
+  D[대시보드] --> S[상세페이지]
   D --> F[구독 추가·편집]
   D --> P[결제수단 관리]
   S --> F
@@ -52,30 +48,25 @@ flowchart LR
 | 화면 | 주요 요소 |
 | --- | --- |
 | 대시보드 | 상단: 월 실부담 총액(큰 숫자), 결제 D-3 이내·무료체험 종료 임박 배너. 본문: 구독중 표와 무료체험·임시구독 표(서비스명, 결제수단, 날짜, 금액, 합계), 정렬(결제일순 / 금액순). 하단: 이번 달 결제 달력(결제일은 숫자 대신 로고, 2건 이상은 건수를 동그랗게 표시) |
-| 상세페이지 (혜택형) | 요금제 혜택 줄글 안내, 유의사항, 출처 |
-| 상세페이지 (이용형) | 달성률 게이지, 이번 달 누적 횟수·시간, 빠른 기록 버튼(+1회 / +30분 등), 회당·시간당 비용, 일별 기록 목록 |
-| 구독 추가·편집 | 기본 정보, 결제, 할인·공유, 상세 유형과 본전 기준 입력 폼 |
+| 상세페이지 | 요금제 혜택 줄글 안내, 유의사항, 출처 |
+| 구독 추가·편집 | 기본 정보, 결제, 할인·공유, 메모 입력 폼 |
 | 결제수단 관리 | 결제수단 목록(별칭, 종류, 끝 4자리), 수단별 월 소계와 연결된 구독 |
 
-**디자인 원칙**: 밝은 배경에 포인트 컬러 1개, 금액은 크게. 달성률 색은 50% 미만 빨강, 50\~99% 노랑, 100% 이상 초록. 
+**디자인 원칙**: 무채색 바탕에 색은 서비스 로고가 맡고, 상태 색은 태그에만 쓴다. 참고: shadcn/ui, Arc UI, affectUI, transitions.dev.
 
 ## 데이터 모델과 계산 규칙
 
-엔티티는 5개다. 금액은 모두 원 단위 정수로 저장한다.
+엔티티는 2개다. 금액은 모두 원 단위 정수로 저장한다.
 
 | 엔티티 | 필드 |
 | --- | --- |
-| Subscription | id, name, category, listPrice, cycleMonths, nextBillingDate, paymentMethodId, status(active / trial / canceling), trialEndDate, priceAfterTrial, discountType(none / amount / percent), discountValue, shareCount, myShareOverride, detailType(benefit / usage), usageUnit(count / minutes), usageTarget, memo |
+| Subscription | id, name, category, listPrice, cycleMonths, nextBillingDate, paymentMethodId, status(active / trial / canceling), trialEndDate, priceAfterTrial, discountType(none / amount / percent), discountValue, shareCount, myShareOverride, memo |
 | PaymentMethod | id, nickname, type(card / account / easypay), last4 |
-| Benefit | id, subscriptionId, name, resetCycle(monthly / none), estimatedValue |
-| BenefitUse | id, benefitId, subscriptionId, date, savedAmount, note |
-| UsageLog | id, subscriptionId, date, amount(횟수 또는 분) |
 
 **계산 규칙**
 
 - 주기당 실부담액 = (정가 − 할인) ÷ 공유 인원. myShareOverride가 있으면 그 값을 사용
 - 월 환산 실부담액 = 주기당 실부담액 ÷ cycleMonths, 원 단위 반올림
-- 이용형 달성률 = 이번 달 이용량 ÷ usageTarget × 100. usageTarget은 "이만큼 쓰면 본전"이라고 내가 정한 값 (예: 월 20시간)
 - 월 총액은 active만 합산. trial은 "체험 종료 후 추가될 금액"으로 따로 표시, canceling은 제외
 - "이번 달"은 달력 기준 1일\~말일
 

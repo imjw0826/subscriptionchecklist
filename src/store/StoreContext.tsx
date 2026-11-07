@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import type { AppData, PaymentMethod, Subscription, TableName, UsageLog } from '../types'
+import type { AppData, PaymentMethod, Subscription, TableName } from '../types'
 import { emptyData, type Repository } from './repo'
 import { subscriptionsToRoll } from '../lib/calc'
 import { todayISO } from '../lib/date'
@@ -14,8 +14,6 @@ interface Store {
   deleteSubscription(id: string): Promise<void>
   savePaymentMethod(pm: PaymentMethod): Promise<void>
   deletePaymentMethod(id: string): Promise<void>
-  saveUsageLog(log: UsageLog): Promise<void>
-  deleteUsageLog(id: string): Promise<void>
   dismissError(): void
 }
 
@@ -73,7 +71,7 @@ export function StoreProvider({ repo, children }: { repo: Repository; children: 
       })
       await run(async () => {
         // 부모 → 자식 순서로 저장, 자식 → 부모 순서로 삭제
-        const order: TableName[] = ['paymentMethods', 'subscriptions', 'benefits', 'usageLogs']
+        const order: TableName[] = ['paymentMethods', 'subscriptions']
         for (const t of order) {
           const rows = changes.upsert?.[t]
           if (rows?.length) await repo.upsert(t, rows as unknown as ({ id: string } & Record<string, unknown>)[])
@@ -127,14 +125,7 @@ export function StoreProvider({ repo, children }: { repo: Repository; children: 
         return apply({ upsert: { subscriptions: [sub] } })
       },
       async deleteSubscription(id) {
-        const cur = d()
-        return apply({
-          remove: {
-            subscriptions: [id],
-            benefits: cur.benefits.filter((b) => b.subscriptionId === id).map((b) => b.id),
-            usageLogs: cur.usageLogs.filter((l) => l.subscriptionId === id).map((l) => l.id),
-          },
-        })
+        return apply({ remove: { subscriptions: [id] } })
       },
       async savePaymentMethod(pm) {
         return apply({ upsert: { paymentMethods: [pm] } })
@@ -145,12 +136,6 @@ export function StoreProvider({ repo, children }: { repo: Repository; children: 
           .map((s) => ({ ...s, paymentMethodId: null }))
         await apply({ upsert: { subscriptions: unlinked } })
         return apply({ remove: { paymentMethods: [id] } })
-      },
-      async saveUsageLog(log) {
-        return apply({ upsert: { usageLogs: [log] } })
-      },
-      async deleteUsageLog(id) {
-        return apply({ remove: { usageLogs: [id] } })
       },
       dismissError() {
         setError(null)

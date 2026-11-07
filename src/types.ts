@@ -3,8 +3,6 @@ export type ISODate = string
 
 export type SubscriptionStatus = 'active' | 'trial' | 'canceling'
 export type DiscountType = 'none' | 'amount' | 'percent'
-export type DetailType = 'benefit' | 'usage'
-export type UsageUnit = 'count' | 'minutes'
 
 export interface Subscription {
   id: string
@@ -21,10 +19,6 @@ export interface Subscription {
   discountValue: number
   shareCount: number
   myShareOverride: number | null
-  detailType: DetailType
-  usageUnit: UsageUnit
-  /** 이 만큼 쓰면 본전 (횟수 또는 분) */
-  usageTarget: number
   memo: string
   /** 카탈로그(src/data/catalog.md)에서 고른 요금제 ID. 직접 입력한 구독은 null */
   catalogId: string | null
@@ -39,29 +33,9 @@ export interface PaymentMethod {
   last4: string
 }
 
-export type ResetCycle = 'monthly' | 'none'
-
-/** 예전 혜택 체크리스트의 항목. 지금은 카탈로그에 없는 구독의 혜택 안내 문장에만 읽어서 쓴다 */
-export interface Benefit {
-  id: string
-  subscriptionId: string
-  name: string
-  resetCycle: ResetCycle
-  estimatedValue: number
-}
-
-export interface UsageLog {
-  id: string
-  subscriptionId: string
-  date: ISODate
-  amount: number
-}
-
 export interface AppData {
   subscriptions: Subscription[]
   paymentMethods: PaymentMethod[]
-  benefits: Benefit[]
-  usageLogs: UsageLog[]
 }
 
 export type TableName = keyof AppData

@@ -120,7 +120,7 @@ export default function CatalogSearch({
           ref={listRef}
           id={listId}
           role="listbox"
-          className="t-reveal absolute inset-x-0 top-full z-30 mt-1.5 max-h-80 overflow-y-auto rounded-2xl bg-surface p-1.5 shadow-xl ring-1 shadow-black/10 ring-line"
+          className="t-reveal absolute inset-x-0 top-full z-30 mt-1.5 max-h-80 overflow-y-auto rounded-lg border border-line bg-surface p-1 shadow-floating"
           // 목록을 누르는 동안 입력칸 blur로 닫히지 않게
           onMouseDown={(e) => e.preventDefault()}
         >
@@ -141,7 +141,7 @@ export default function CatalogSearch({
                 data-index={i}
                 role="option"
                 aria-selected={isActive}
-                className={`flex cursor-pointer items-center gap-2.5 rounded-xl px-2.5 py-2 ${isActive ? 'bg-sunken' : ''}`}
+                className={`flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 ${isActive ? 'bg-sunken' : ''}`}
                 onMouseEnter={() => setActive(i)}
                 onClick={() => choose(row)}
               >
@@ -159,7 +159,7 @@ export default function CatalogSearch({
                       <span className="block truncate" title={subscriptionName(row.plan)}>
                         {row.plan.plan}
                       </span>
-                      {row.plan.supplemented && <span className="text-xs text-warn-ink">공식 외 출처 보완</span>}
+                      {row.plan.supplemented && <span className="text-xs text-warn">공식 외 출처 보완</span>}
                     </span>
                     <span className="shrink-0 text-xs text-ink-2">{priceLabel(row.plan)}</span>
                   </>
