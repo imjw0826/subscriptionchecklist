@@ -61,7 +61,7 @@ function Sidebar({ pathname }: { pathname: string }) {
   const subs = [...data.subscriptions].sort((a, b) => a.name.localeCompare(b.name, 'ko'))
 
   return (
-    <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col overflow-y-auto px-3 py-4 lg:flex">
+    <aside className="hidden h-full w-60 shrink-0 flex-col overflow-y-auto px-3 py-4 lg:flex">
       <NavLink to="/" className="mb-6 flex h-9 items-center gap-2 px-2.5 text-sm font-semibold">
         <img src="/favicon.svg" alt="" className="h-6 w-6" />
         구독 체크리스트
@@ -144,16 +144,19 @@ export default function Layout() {
   const { pathname } = useLocation()
   const dir = usePageDirection(pathname)
 
+  const pane = useRef<HTMLDivElement>(null)
+
   useEffect(() => {
-    window.scrollTo(0, 0)
+    pane.current?.scrollTo(0, 0)
   }, [pathname])
 
   return (
-    <div className="min-h-dvh">
-      <div className="flex min-h-dvh">
+    // 화면 높이를 고정하고 본문만 스크롤한다. 문서 전체가 스크롤되면 iPad(WebKit)에서 사이드바와 저장 버튼의 sticky가 흔들린다
+    <div className="h-dvh overflow-hidden">
+      <div className="flex h-full">
         <Sidebar pathname={pathname} />
         {/* shadcn sidebar의 inset 구성: 회색 바탕 위에 본문 판을 올린다 */}
-        <div className="min-w-0 flex-1 bg-surface lg:my-2 lg:mr-2 lg:rounded-xl lg:border lg:border-line lg:shadow-card">
+        <div ref={pane} className="min-w-0 flex-1 overflow-y-auto overscroll-contain bg-surface lg:my-2 lg:mr-2 lg:rounded-xl lg:border lg:border-line lg:shadow-card">
           <MobileHeader pathname={pathname} />
 
           {error && (
