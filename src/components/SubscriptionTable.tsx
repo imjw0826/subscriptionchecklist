@@ -22,7 +22,7 @@ const bodyCell = 'px-3 py-2.5 first:pl-5 last:pr-5 last:text-right'
 
 const cycleLabel = (months: number) => (months === 1 ? '매달' : months === 12 ? '매년' : `${months}개월`)
 
-/** 구독 목록 표 (shadcn Table). 좁은 화면에서는 부가 칸을 숨기고 날짜를 이름 아래로 옮긴다 */
+/** 구독 목록 표 (shadcn Table). 표가 좁으면 부가 칸을 숨기고 날짜를 이름 아래로 옮긴다. 화면이 아니라 표의 폭을 기준으로 한다 */
 export default function SubscriptionTable({
   title,
   rows,
@@ -41,7 +41,7 @@ export default function SubscriptionTable({
   const total = rows.reduce((sum, r) => sum + r.amount, 0)
 
   return (
-    <section className="panel overflow-hidden" aria-label={title}>
+    <section className="panel @container overflow-hidden" aria-label={title}>
       <header className="flex h-12 items-center gap-2 px-5">
         <h2 className="text-sm font-semibold">{title}</h2>
         <span className="count">{rows.length}</span>
@@ -53,13 +53,13 @@ export default function SubscriptionTable({
             <th scope="col" className={headCell}>
               서비스
             </th>
-            <th scope="col" className={`${headCell} hidden w-40 lg:table-cell`}>
+            <th scope="col" className={`${headCell} hidden w-36 @3xl:table-cell`}>
               결제수단
             </th>
-            <th scope="col" className={`${headCell} hidden w-24 lg:table-cell`}>
+            <th scope="col" className={`${headCell} hidden w-20 @3xl:table-cell`}>
               주기
             </th>
-            <th scope="col" className={`${headCell} hidden w-44 sm:table-cell`}>
+            <th scope="col" className={`${headCell} hidden w-36 @lg:table-cell`}>
               {dateLabel}
             </th>
             <th scope="col" className={`${headCell} w-[8.5rem]`}>
@@ -94,16 +94,16 @@ export default function SubscriptionTable({
                           </Link>
                           {r.badge}
                         </p>
-                        <p className="truncate text-xs text-ink-3 sm:hidden">
+                        <p className="truncate text-xs text-ink-3 @lg:hidden">
                           {dateLabel} <span className="num">{formatDate(r.date).slice(5)}</span>
                         </p>
-                        <p className="hidden truncate text-xs text-ink-3 sm:block">{r.sub.category || '기타'}</p>
+                        <p className="hidden truncate text-xs text-ink-3 @lg:block">{r.sub.category || '기타'}</p>
                       </div>
                     </div>
                   </td>
-                  <td className={`${bodyCell} hidden truncate text-ink-2 lg:table-cell`}>{r.paymentName}</td>
-                  <td className={`${bodyCell} hidden text-ink-2 lg:table-cell`}>{cycleLabel(r.sub.cycleMonths)}</td>
-                  <td className={`${bodyCell} hidden whitespace-nowrap sm:table-cell`}>
+                  <td className={`${bodyCell} hidden truncate text-ink-2 @3xl:table-cell`}>{r.paymentName}</td>
+                  <td className={`${bodyCell} hidden text-ink-2 @3xl:table-cell`}>{cycleLabel(r.sub.cycleMonths)}</td>
+                  <td className={`${bodyCell} hidden whitespace-nowrap @lg:table-cell`}>
                     <span className="flex items-center gap-2">
                       <span className="num w-10 text-ink-2">{formatDate(r.date).slice(5)}</span>
                       {r.dateTag}
@@ -121,9 +121,9 @@ export default function SubscriptionTable({
             <th scope="row" className={`${bodyCell} text-left font-medium`}>
               {totalLabel}
             </th>
-            <td className="hidden lg:table-cell" />
-            <td className="hidden lg:table-cell" />
-            <td className="hidden sm:table-cell" />
+            <td className="hidden @3xl:table-cell" />
+            <td className="hidden @3xl:table-cell" />
+            <td className="hidden @lg:table-cell" />
             <td className={`${bodyCell} num font-semibold whitespace-nowrap`}>{formatWon(total)}</td>
           </tr>
         </tfoot>

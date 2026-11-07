@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Subscription } from '../types'
 import {
-  computeTotals,
   costPerCycle,
   monthlyCost,
   paymentsInMonth,
@@ -68,19 +67,13 @@ describe('월 환산', () => {
   })
 })
 
-describe('월 총액', () => {
+describe('결제수단별 소계', () => {
   const subs = [
     sub({ id: 'a', listPrice: 10000, paymentMethodId: 'p1' }),
     sub({ id: 'b', listPrice: 60000, cycleMonths: 12, paymentMethodId: 'p1' }),
     sub({ id: 'c', listPrice: 9900, status: 'canceling', paymentMethodId: 'p2' }),
     sub({ id: 'd', listPrice: 14900, status: 'trial', priceAfterTrial: 14900, paymentMethodId: 'p2' }),
   ]
-  it('active만 합산하고 trial은 따로, canceling은 제외', () => {
-    expect(computeTotals(subs)).toEqual({ monthly: 15000, yearly: 180000, trialMonthly: 14900 })
-  })
-  it('연 환산은 월 반올림 오차 없이 계산', () => {
-    expect(computeTotals([sub({ listPrice: 10000, cycleMonths: 3 })]).yearly).toBe(40000)
-  })
   it('결제수단별 소계', () => {
     const result = subtotalsByPaymentMethod(subs, [
       { id: 'p1', nickname: 'A', type: 'card', last4: '1234' },

@@ -1,6 +1,6 @@
 # 구독 체크리스트
 
-개인용 정기구독 관리 웹앱. 월 실부담 총액, 구독 목록, 이번 달 결제 달력을 한 화면에서 봅니다. (PRD: `구독 관리 웹앱 PRD.md`)
+개인용 정기구독 관리 웹앱. 이번 달 결제 달력과 구독 목록, 금액 합계를 한 화면에서 봅니다. (PRD: `구독 관리 웹앱 PRD.md`)
 
 React + TypeScript + Vite + Tailwind CSS v4 · Supabase · Vitest
 

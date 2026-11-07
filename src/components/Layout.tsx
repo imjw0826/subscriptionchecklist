@@ -24,20 +24,17 @@ function Skeleton() {
   return (
     <div className="t-skel space-y-6" aria-busy="true" aria-label="불러오는 중">
       <div className={`h-8 w-32 ${bar}`} />
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {[0, 1, 2, 3].map((i) => (
-          <div key={i} className="card space-y-3 p-5">
-            <div className={`h-4 w-20 ${bar}`} />
-            <div className={`h-7 w-28 ${bar}`} />
-          </div>
-        ))}
-      </div>
-      <div className="card space-y-4 p-5">
-        {[0, 1, 2, 3].map((j) => (
-          <div key={j} className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-full bg-sunken" />
-            <div className={`h-4 flex-1 ${bar}`} />
-            <div className={`h-4 w-16 ${bar}`} />
+      <div className="card h-80" />
+      <div className="grid gap-4 lg:grid-cols-2">
+        {[0, 1].map((i) => (
+          <div key={i} className="card space-y-4 p-5">
+            {[0, 1, 2].map((j) => (
+              <div key={j} className="flex items-center gap-3">
+                <div className="h-8 w-8 rounded-full bg-sunken" />
+                <div className={`h-4 flex-1 ${bar}`} />
+                <div className={`h-4 w-16 ${bar}`} />
+              </div>
+            ))}
           </div>
         ))}
       </div>

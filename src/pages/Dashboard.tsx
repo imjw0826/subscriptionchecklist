@@ -2,13 +2,13 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { Subscription } from '../types'
 import { useStore } from '../store/StoreContext'
-import { computeTotals, monthlyCost, monthlyCostAfterTrial, paymentsInMonth, upcomingAlerts } from '../lib/calc'
-import { diffDays, formatDate, formatDday, monthKey, parseISO } from '../lib/date'
+import { monthlyCost, monthlyCostAfterTrial, upcomingAlerts } from '../lib/calc'
+import { diffDays, formatDday, parseISO } from '../lib/date'
 import { formatWon } from '../lib/format'
 import PaymentCalendar from '../components/PaymentCalendar'
 import SubscriptionTable, { type TableRow } from '../components/SubscriptionTable'
-import { Avatar, EmptyState, Icon, MetricCard, PageHeader, StatusBadge, TimePill } from '../components/ui'
-import { AnimatedNumber, Segmented } from '../components/motion'
+import { Avatar, EmptyState, Icon, PageHeader, StatusBadge, TimePill } from '../components/ui'
+import { Segmented } from '../components/motion'
 
 type SortKey = 'date' | 'amount'
 const SORTS: { value: SortKey; label: string }[] = [
@@ -37,10 +37,7 @@ export default function Dashboard() {
   }
 
   const { y, m } = parseISO(today)
-  const totals = computeTotals(data.subscriptions)
   const alerts = upcomingAlerts(data.subscriptions, today)
-  const remaining = useMemo(() => paymentsInMonth(data.subscriptions, monthKey(today)).filter((p) => p.date >= today), [data.subscriptions, today])
-  const remainingTotal = remaining.reduce((sum, p) => sum + p.amount, 0)
 
   const { current, temporary } = useMemo(() => {
     const pmName = new Map(data.paymentMethods.map((p) => [p.id, p.nickname]))
@@ -66,16 +63,16 @@ export default function Dashboard() {
     }
   }, [data.subscriptions, data.paymentMethods, today, sort])
 
-  const trialCount = data.subscriptions.filter((s) => s.status === 'trial').length
-  const next = remaining[0]
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <PageHeader title="대시보드" description={`${y}년 ${m}월`}>
+        {data.subscriptions.length > 0 && <Segmented label="정렬" value={sort} onChange={setSort} options={SORTS} />}
         <Link to="/subscriptions/new" className="btn-primary">
           <Icon name="plus" size={16} />새 구독
         </Link>
       </PageHeader>
+
+      <PaymentCalendar subscriptions={data.subscriptions} today={today} />
 
       {data.subscriptions.length === 0 ? (
         <div className="panel">
@@ -92,17 +89,6 @@ export default function Dashboard() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 xl:grid-cols-4">
-            <MetricCard label="월 실부담" value={<AnimatedNumber value={totals.monthly} format={formatWon} />} context={`구독중 ${current.length}개`} />
-            <MetricCard label="연 환산" value={<AnimatedNumber value={totals.yearly} format={formatWon} />} context="지금 구독 기준 1년" />
-            <MetricCard
-              label="이번 달 남은 결제"
-              value={<AnimatedNumber value={remainingTotal} format={formatWon} />}
-              context={next ? `다음 ${formatDate(next.date).slice(5)} ${next.subscription.name}` : '남은 결제가 없어요'}
-            />
-            <MetricCard label="체험 후 추가" value={<AnimatedNumber value={totals.trialMonthly} format={formatWon} />} context={trialCount ? `무료체험 ${trialCount}개 · 월 금액` : '무료체험 없음'} />
-          </div>
-
           {/* 결제 D-3 이내·체험 종료 임박 */}
           {alerts.length > 0 && (
             <section className="panel divide-y divide-line overflow-hidden" role="status" aria-label="곧 결제되는 구독">
@@ -125,18 +111,12 @@ export default function Dashboard() {
             </section>
           )}
 
-          <div className="space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <h2 className="text-base font-semibold">구독 목록</h2>
-              <Segmented label="정렬" value={sort} onChange={setSort} options={SORTS} />
-            </div>
-            <SubscriptionTable title="구독중" rows={current} dateLabel="다음 결제" amountLabel="월 실부담" totalLabel="월 합계" empty="구독중인 서비스가 없어요" />
-            <SubscriptionTable title="무료체험·임시구독" rows={temporary} dateLabel="종료일" amountLabel="종료 후 월 금액" totalLabel="종료 후 월 합계" empty="무료체험이나 임시구독이 없어요" />
+          <div className="grid items-start gap-4 lg:grid-cols-2">
+            <SubscriptionTable title="구독" rows={current} dateLabel="다음 결제" amountLabel="월 실부담" totalLabel="월 합계" empty="구독중인 서비스가 없어요" />
+            <SubscriptionTable title="임시" rows={temporary} dateLabel="종료일" amountLabel="종료 후 월 금액" totalLabel="종료 후 월 합계" empty="무료체험이나 임시구독이 없어요" />
           </div>
         </>
       )}
-
-      <PaymentCalendar subscriptions={data.subscriptions} today={today} />
     </div>
   )
 }

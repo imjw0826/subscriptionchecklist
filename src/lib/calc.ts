@@ -40,30 +40,6 @@ export function monthlyCostAfterTrial(sub: Subscription): number {
   return monthlyCost(sub, postTrialPrice(sub))
 }
 
-export interface Totals {
-  /** active 구독의 월 환산 실부담액 합계 */
-  monthly: number
-  /** active 구독의 연 환산 합계 (주기당 금액 × 12/주기) */
-  yearly: number
-  /** trial 구독이 체험 종료 후 추가될 월 금액 */
-  trialMonthly: number
-}
-
-export function computeTotals(subs: Subscription[]): Totals {
-  let monthly = 0
-  let yearlyExact = 0
-  let trialMonthly = 0
-  for (const s of subs) {
-    if (s.status === 'active') {
-      monthly += monthlyCost(s)
-      yearlyExact += (costPerCycle(s) * 12) / Math.max(1, s.cycleMonths)
-    } else if (s.status === 'trial') {
-      trialMonthly += monthlyCostAfterTrial(s)
-    }
-  }
-  return { monthly, yearly: Math.round(yearlyExact), trialMonthly }
-}
-
 export interface PaymentSubtotal {
   paymentMethodId: string | null
   monthly: number
