@@ -9,6 +9,7 @@ import { Field, Icon, NumberInput, PageHeader } from '../components/ui'
 import { Collapse, Segmented, shakeErrors } from '../components/motion'
 import { useToast } from '../components/Toast'
 import CatalogSearch from '../components/CatalogSearch'
+import DateField from '../components/DateField'
 import { subscriptionName, type CatalogPlan, type PriceOption } from '../lib/catalog'
 import { useCatalog } from '../lib/useCatalog'
 
@@ -321,9 +322,7 @@ export default function SubscriptionForm() {
         <div>
           <Collapse open={d.status === 'trial'}>
             <div className="grid gap-4 rounded-xl bg-sunken p-3 sm:grid-cols-2">
-              <Field label="체험 종료일" error={err('trialEndDate')}>
-                <input type="date" className={`input ${err('trialEndDate') ? 'input-error' : ''}`} value={d.trialEndDate} onChange={(e) => set('trialEndDate', e.target.value)} />
-              </Field>
+              <DateField label="체험 종료일" error={err('trialEndDate')} value={d.trialEndDate} onChange={(v) => set('trialEndDate', v)} />
               <Field label="종료 후 결제 금액" error={err('priceAfterTrial')} hint="비우면 정가">
                 <NumberInput
                   value={d.priceAfterTrial}
@@ -337,14 +336,7 @@ export default function SubscriptionForm() {
             </div>
           </Collapse>
           <Collapse open={d.status !== 'trial'}>
-            <Field label="다음 결제일" error={err('nextBillingDate')} hint="지나면 주기만큼 자동으로 넘어가요">
-              <input
-                type="date"
-                className={`input ${err('nextBillingDate') ? 'input-error' : ''}`}
-                value={d.nextBillingDate}
-                onChange={(e) => set('nextBillingDate', e.target.value)}
-              />
-            </Field>
+            <DateField label="다음 결제일" error={err('nextBillingDate')} hint="지나면 주기만큼 자동으로 넘어가요" value={d.nextBillingDate} onChange={(v) => set('nextBillingDate', v)} />
           </Collapse>
         </div>
 

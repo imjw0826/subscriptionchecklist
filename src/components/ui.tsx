@@ -285,6 +285,7 @@ const ICONS: Record<string, ReactNode> = {
     </>
   ),
   back: <path d="M15 18l-6-6 6-6" />,
+  backDouble: <path d="M12 18l-6-6 6-6M19 18l-6-6 6-6" />,
 }
 
 export function Icon({ name, size = 18 }: { name: keyof typeof ICONS; size?: number }) {
