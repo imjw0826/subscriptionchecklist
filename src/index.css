@@ -82,6 +82,8 @@
 
 html {
   -webkit-tap-highlight-color: transparent;
+  /* 터치에서 더블탭 확대 대기 없이 바로 누른다 */
+  touch-action: manipulation;
 }
 
 body {
@@ -430,8 +432,10 @@ button:not(:disabled),
   animation-delay: calc(30ms * var(--i, 0));
   transition: transform 150ms var(--ease-out-expo);
 }
-.t-pop:hover {
-  transform: scale(1.08);
+@media (hover: hover) {
+  .t-pop:hover {
+    transform: scale(1.08);
+  }
 }
 .t-pop:active {
   transform: scale(0.94);

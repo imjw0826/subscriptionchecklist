@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import type { Subscription } from '../types'
 import { formatDate } from '../lib/date'
 import { formatWon } from '../lib/format'
@@ -38,6 +38,7 @@ export default function SubscriptionTable({
   totalLabel: string
   empty: string
 }) {
+  const navigate = useNavigate()
   const total = rows.reduce((sum, r) => sum + r.amount, 0)
 
   return (
@@ -47,49 +48,56 @@ export default function SubscriptionTable({
         <span className="count">{rows.length}</span>
       </header>
 
-      <table className="w-full table-fixed border-collapse text-sm">
-        <thead>
-          <tr className="border-y border-line bg-sunken/60">
-            <th scope="col" className={headCell}>
-              서비스
-            </th>
-            <th scope="col" className={`${headCell} hidden w-36 @3xl:table-cell`}>
-              결제수단
-            </th>
-            <th scope="col" className={`${headCell} hidden w-20 @3xl:table-cell`}>
-              주기
-            </th>
-            <th scope="col" className={`${headCell} hidden w-36 @lg:table-cell`}>
-              {dateLabel}
-            </th>
-            <th scope="col" className={`${headCell} w-[8.5rem]`}>
-              {amountLabel}
-            </th>
-          </tr>
-        </thead>
-
-        <tbody className="divide-y divide-line">
-          {rows.length === 0 ? (
-            <tr>
-              <td colSpan={5} className="px-5 py-8 text-center text-ink-3">
-                {empty}
-              </td>
+      {rows.length === 0 ? (
+        // 표를 그리지 않는다. 숨긴 칸까지 합친 colSpan은 좁은 폭에서 빈 칸을 만든다
+        <>
+          <p className="border-t border-line px-5 py-8 text-center text-sm text-ink-3">{empty}</p>
+          <div className="flex items-center justify-between gap-4 border-t border-line bg-sunken/60 px-5 py-2.5 text-sm">
+            <span className="font-medium whitespace-nowrap">{totalLabel}</span>
+            <span className="num font-semibold whitespace-nowrap">{formatWon(total)}</span>
+          </div>
+        </>
+      ) : (
+        <table className="w-full table-fixed border-collapse text-sm">
+          <thead>
+            <tr className="border-y border-line bg-sunken/60">
+              <th scope="col" className={headCell}>
+                서비스
+              </th>
+              <th scope="col" className={`${headCell} hidden w-36 @3xl:table-cell`}>
+                결제수단
+              </th>
+              <th scope="col" className={`${headCell} hidden w-20 @3xl:table-cell`}>
+                주기
+              </th>
+              <th scope="col" className={`${headCell} hidden w-36 @lg:table-cell`}>
+                {dateLabel}
+              </th>
+              <th scope="col" className={`${headCell} w-[8.5rem]`}>
+                {amountLabel}
+              </th>
             </tr>
-          ) : (
-            rows.map((r) => {
+          </thead>
+
+          <tbody className="divide-y divide-line">
+            {rows.map((r) => {
               const muted = r.sub.status === 'canceling'
+              const href = `/subscriptions/${r.sub.id}`
               return (
-                <tr key={r.sub.id} className="relative transition-colors duration-150 hover:bg-sunken/60">
+                // 행 어디를 눌러도 이동한다. 링크를 행 크기로 늘리는 방식은 tr의 position: relative가 필요한데, WebKit에서는 페이지 전체를 덮을 수 있다
+                <tr
+                  key={r.sub.id}
+                  className="cursor-pointer transition-colors duration-150 hover:bg-sunken/60"
+                  onClick={(e) => {
+                    if (!(e.target as HTMLElement).closest('a')) navigate(href)
+                  }}
+                >
                   <td className={bodyCell}>
                     <div className="flex items-center gap-3">
                       <Avatar name={r.sub.name} muted={muted} />
                       <div className="min-w-0 flex-1">
                         <p className="flex min-w-0 items-center gap-1.5">
-                          {/* 링크 영역을 행 전체로 넓힌다 */}
-                          <Link
-                            to={`/subscriptions/${r.sub.id}`}
-                            className={`min-w-0 truncate font-medium outline-none after:absolute after:inset-0 focus-visible:after:ring-2 focus-visible:after:ring-ink/30 focus-visible:after:ring-inset ${muted ? 'text-ink-2' : ''}`}
-                          >
+                          <Link to={href} className={`min-w-0 truncate font-medium ${muted ? 'text-ink-2' : ''}`}>
                             {r.sub.name}
                           </Link>
                           {r.badge}
@@ -112,22 +120,22 @@ export default function SubscriptionTable({
                   <td className={`${bodyCell} num font-medium whitespace-nowrap`}>{formatWon(r.amount)}</td>
                 </tr>
               )
-            })
-          )}
-        </tbody>
+            })}
+          </tbody>
 
-        <tfoot>
-          <tr className="border-t border-line bg-sunken/60">
-            <th scope="row" className={`${bodyCell} text-left font-medium`}>
-              {totalLabel}
-            </th>
-            <td className="hidden @3xl:table-cell" />
-            <td className="hidden @3xl:table-cell" />
-            <td className="hidden @lg:table-cell" />
-            <td className={`${bodyCell} num font-semibold whitespace-nowrap`}>{formatWon(total)}</td>
-          </tr>
-        </tfoot>
-      </table>
+          <tfoot>
+            <tr className="border-t border-line bg-sunken/60">
+              <th scope="row" className={`${bodyCell} text-left font-medium whitespace-nowrap`}>
+                {totalLabel}
+              </th>
+              <td className="hidden @3xl:table-cell" />
+              <td className="hidden @3xl:table-cell" />
+              <td className="hidden @lg:table-cell" />
+              <td className={`${bodyCell} num font-semibold whitespace-nowrap`}>{formatWon(total)}</td>
+            </tr>
+          </tfoot>
+        </table>
+      )}
     </section>
   )
 }

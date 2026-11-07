@@ -35,32 +35,33 @@ function DayCell({
   const isPast = date < today
   const ring = selected ? 'ring-2 ring-primary ring-offset-2 ring-offset-surface' : isToday ? 'ring-1 ring-line-strong ring-offset-2 ring-offset-surface' : ''
 
-  if (payments.length === 0) {
-    return (
-      <div className="flex aspect-square max-h-14 w-full items-center justify-center" aria-label={dayLabel(date, payments)}>
-        <span className={`num flex h-[34px] w-[34px] items-center justify-center rounded-full text-sm ${ring} ${isToday ? 'font-semibold text-ink' : isPast ? 'text-ink-3' : 'text-ink-2'}`}>{parseISO(date).d}</span>
-      </div>
-    )
-  }
-
   return (
-    <div className="t-tip-host relative flex aspect-square max-h-14 w-full items-center justify-center">
-      <button type="button" aria-label={dayLabel(date, payments)} aria-pressed={selected} onClick={onSelect} style={{ '--i': index } as CSSProperties} className={`t-pop rounded-full ${ring}`}>
-        {payments.length === 1 ? (
-          <Avatar name={payments[0].subscription.name} size={MARK_SIZE} muted={isPast} />
+    <div className="t-tip-host relative aspect-square max-h-14 w-full">
+      {/* 숫자나 로고가 아니라 칸 전체를 누를 수 있게 한다 */}
+      <button type="button" aria-label={dayLabel(date, payments)} aria-pressed={selected} onClick={onSelect} className="flex h-full w-full items-center justify-center rounded-lg">
+        {payments.length === 0 ? (
+          <span className={`num flex h-[34px] w-[34px] items-center justify-center rounded-full text-sm ${ring} ${isToday ? 'font-semibold text-ink' : isPast ? 'text-ink-3' : 'text-ink-2'}`}>{parseISO(date).d}</span>
         ) : (
-          <span className={`num flex h-[34px] w-[34px] items-center justify-center rounded-full bg-primary text-sm font-semibold text-on-primary ${isPast ? 'opacity-50' : ''}`}>{payments.length}</span>
+          <span style={{ '--i': index } as CSSProperties} className={`t-pop rounded-full ${ring}`}>
+            {payments.length === 1 ? (
+              <Avatar name={payments[0].subscription.name} size={MARK_SIZE} muted={isPast} />
+            ) : (
+              <span className={`num flex h-[34px] w-[34px] items-center justify-center rounded-full bg-primary text-sm font-semibold text-on-primary ${isPast ? 'opacity-50' : ''}`}>{payments.length}</span>
+            )}
+          </span>
         )}
       </button>
-      {/* Tooltip open / close: 어떤 구독인지는 칸에 다 못 보여주므로 올리면 알려준다 */}
-      <div aria-hidden className="t-tip w-max max-w-56 space-y-1 rounded-lg border border-line bg-surface px-2.5 py-2 text-xs shadow-raised">
-        {payments.map((p) => (
-          <p key={p.subscription.id} className="flex items-center justify-between gap-4">
-            <span className="truncate">{p.subscription.name}</span>
-            <span className="num font-medium">{formatWon(p.amount)}</span>
-          </p>
-        ))}
-      </div>
+      {payments.length > 0 && (
+        // Tooltip open / close: 어떤 구독인지는 칸에 다 못 보여주므로 올리면 알려준다
+        <div aria-hidden className="t-tip w-max max-w-56 space-y-1 rounded-lg border border-line bg-surface px-2.5 py-2 text-xs shadow-raised">
+          {payments.map((p) => (
+            <p key={p.subscription.id} className="flex items-center justify-between gap-4">
+              <span className="truncate">{p.subscription.name}</span>
+              <span className="num font-medium">{formatWon(p.amount)}</span>
+            </p>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -77,9 +78,9 @@ export default function PaymentCalendar({ subscriptions, today }: { subscription
   }, [payments])
   const [selected, setSelected] = useState<string | null>(null)
 
-  // 달이 바뀌거나 결제가 사라져 선택한 날에 결제가 없으면 전체 목록으로 돌아간다
-  const activeDate = selected && byDate.has(selected) ? selected : null
-  const visible = activeDate ? byDate.get(activeDate)! : payments
+  // 달이 바뀌면 지난달 선택은 없는 날짜가 되므로 전체 목록으로 돌아간다
+  const activeDate = selected && monthKey(selected) === month ? selected : null
+  const visible = activeDate ? (byDate.get(activeDate) ?? []) : payments
   const total = visible.reduce((sum, p) => sum + p.amount, 0)
   let markIndex = 0
 
@@ -128,7 +129,7 @@ export default function PaymentCalendar({ subscriptions, today }: { subscription
           </div>
 
           {visible.length === 0 ? (
-            <p className="flex-1 py-8 text-center text-sm text-ink-3">이번 달 결제가 없어요</p>
+            <p className="flex-1 py-8 text-center text-sm text-ink-3">{activeDate ? '이날은 결제가 없어요' : '이번 달 결제가 없어요'}</p>
           ) : (
             <ul key={activeDate ?? 'all'} className="t-reveal flex-1 divide-y divide-line">
               {visible.map((p) => {
