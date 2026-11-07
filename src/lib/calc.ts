@@ -2,8 +2,8 @@
  * 금액·달성률 계산 규칙 (PRD "데이터 모델과 계산 규칙").
  * UI와 분리된 순수 함수만 둔다.
  */
-import type { AppData, BenefitUse, ISODate, PaymentMethod, Subscription, UsageLog } from '../types'
-import { addMonths, diffDays, isSameMonth } from './date'
+import type { ISODate, PaymentMethod, Subscription, UsageLog } from '../types'
+import { addMonths, diffDays, isSameMonth, monthKey, parseISO } from './date'
 
 type PriceFields = Pick<
   Subscription,
@@ -92,13 +92,6 @@ export function subtotalsByPaymentMethod(subs: Subscription[], methods: PaymentM
   return [...map.values()]
 }
 
-/** 이번 달 혜택 절약액 합계 */
-export function monthlySavings(uses: BenefitUse[], subscriptionId: string, today: ISODate): number {
-  return uses
-    .filter((u) => u.subscriptionId === subscriptionId && isSameMonth(u.date, today))
-    .reduce((sum, u) => sum + u.savedAmount, 0)
-}
-
 /** 이번 달 이용량 합계 (횟수 또는 분) */
 export function monthlyUsage(logs: UsageLog[], subscriptionId: string, today: ISODate): number {
   return logs
@@ -106,24 +99,10 @@ export function monthlyUsage(logs: UsageLog[], subscriptionId: string, today: IS
     .reduce((sum, l) => sum + l.amount, 0)
 }
 
-/** 혜택형 달성률 = 이번 달 절약액 ÷ 월 환산 실부담액 × 100. 부담액이 0이면 null */
-export function benefitAchievement(savings: number, monthly: number): number | null {
-  if (monthly <= 0) return null
-  return Math.round((savings / monthly) * 100)
-}
-
 /** 이용형 달성률 = 이번 달 이용량 ÷ usageTarget × 100. 목표가 0이면 null */
 export function usageAchievement(usage: number, target: number): number | null {
   if (target <= 0) return null
   return Math.round((usage / target) * 100)
-}
-
-/** 구독 하나의 이번 달 달성률 */
-export function achievementFor(sub: Subscription, data: Pick<AppData, 'benefitUses' | 'usageLogs'>, today: ISODate): number | null {
-  if (sub.detailType === 'benefit') {
-    return benefitAchievement(monthlySavings(data.benefitUses, sub.id, today), baselineMonthlyCost(sub))
-  }
-  return usageAchievement(monthlyUsage(data.usageLogs, sub.id, today), sub.usageTarget)
 }
 
 export type AchievementLevel = 'low' | 'mid' | 'high' | 'none'
@@ -186,23 +165,38 @@ export function upcomingAlerts(subs: Subscription[], today: ISODate, withinDays 
   return alerts.sort((a, b) => a.days - b.days)
 }
 
-/** 다가오는 결제 (active + trial 종료), 날짜순 */
-export function nextPayments(subs: Subscription[], today: ISODate, limit = 3): Alert[] {
-  const list: Alert[] = []
-  for (const s of subs) {
-    if (s.status === 'active') {
-      list.push({ subscription: s, kind: 'billing', date: s.nextBillingDate, days: diffDays(today, s.nextBillingDate), amount: costPerCycle(s) })
-    } else if (s.status === 'trial' && s.trialEndDate) {
-      list.push({ subscription: s, kind: 'trial', date: s.trialEndDate, days: diffDays(today, s.trialEndDate), amount: costPerCycle(s, postTrialPrice(s)) })
-    }
-  }
-  return list.filter((a) => a.days >= 0).sort((a, b) => a.date.localeCompare(b.date)).slice(0, limit)
+export interface CalendarPayment {
+  subscription: Subscription
+  kind: 'billing' | 'trial'
+  date: ISODate
+  amount: number
 }
 
-/** 혜택 체크 상태: monthly는 이번 달 사용 기록이 있으면, none은 한 번이라도 사용했으면 체크 */
-export function isBenefitChecked(resetCycle: 'monthly' | 'none', usesOfBenefit: BenefitUse[], today: ISODate): boolean {
-  if (resetCycle === 'monthly') return usesOfBenefit.some((u) => isSameMonth(u.date, today))
-  return usesOfBenefit.length > 0
+/** 다음 결제일에서 주기 단위로 앞뒤로 옮겨, month('YYYY-MM')에 결제일이 있으면 그 날짜를 돌려준다 */
+function billingDateInMonth(date: ISODate, cycleMonths: number, month: string): ISODate | null {
+  const from = parseISO(date)
+  const [y, m] = month.split('-').map(Number)
+  const diff = (y - from.y) * 12 + (m - from.m)
+  const cycle = Math.max(1, cycleMonths)
+  return ((diff % cycle) + cycle) % cycle === 0 ? addMonths(date, diff) : null
+}
+
+/**
+ * 달력에 표시할 month('YYYY-MM')의 결제 목록, 날짜순.
+ * active는 이미 지난 결제일도 포함하고, trial은 체험 종료일의 첫 결제만 넣는다.
+ * canceling은 더 결제되지 않으므로 빼고, 실부담이 0원이면 결제가 없으니 뺀다.
+ */
+export function paymentsInMonth(subs: Subscription[], month: string): CalendarPayment[] {
+  const list: CalendarPayment[] = []
+  for (const s of subs) {
+    if (s.status === 'active') {
+      const date = billingDateInMonth(s.nextBillingDate, s.cycleMonths, month)
+      if (date) list.push({ subscription: s, kind: 'billing', date, amount: costPerCycle(s) })
+    } else if (s.status === 'trial' && s.trialEndDate && monthKey(s.trialEndDate) === month) {
+      list.push({ subscription: s, kind: 'trial', date: s.trialEndDate, amount: costPerCycle(s, postTrialPrice(s)) })
+    }
+  }
+  return list.filter((p) => p.amount > 0).sort((a, b) => a.date.localeCompare(b.date) || a.subscription.name.localeCompare(b.subscription.name, 'ko'))
 }
 
 /** 이용형: 회당 비용 또는 시간당 비용. 이용량이 0이면 null */

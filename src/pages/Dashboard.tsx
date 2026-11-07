@@ -1,24 +1,19 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import type { Subscription, SubscriptionStatus } from '../types'
+import type { Subscription } from '../types'
 import { useStore } from '../store/StoreContext'
-import { achievementFor, computeTotals, monthlyCost, monthlyCostAfterTrial, nextPayments, upcomingAlerts } from '../lib/calc'
-import { formatDate, formatDday, weekday } from '../lib/date'
+import { computeTotals, costPerCycle, monthlyCost, monthlyCostAfterTrial, postTrialPrice, upcomingAlerts } from '../lib/calc'
+import { diffDays, formatDate, formatDday } from '../lib/date'
 import { formatWon } from '../lib/format'
-import SubscriptionCard from '../components/SubscriptionCard'
-import { Avatar, Icon, PageHeader, Stat, TimePill } from '../components/ui'
+import PaymentCalendar from '../components/PaymentCalendar'
+import SubscriptionTable, { type TableRow } from '../components/SubscriptionTable'
+import { Icon, PageHeader, Stat, StatusBadge, TimePill } from '../components/ui'
 import { AnimatedNumber, Segmented } from '../components/motion'
 
 type SortKey = 'date' | 'amount'
 const SORTS: { value: SortKey; label: string }[] = [
   { value: 'date', label: '결제일순' },
   { value: 'amount', label: '금액순' },
-]
-
-const COLUMNS: { status: SubscriptionStatus; title: string }[] = [
-  { status: 'active', title: '구독중' },
-  { status: 'trial', title: '무료체험' },
-  { status: 'canceling', title: '해지예정' },
 ]
 
 function readSort(): SortKey {
@@ -29,27 +24,8 @@ function readSort(): SortKey {
   }
 }
 
-/** 보드 칼럼: 회색 바탕, 제목 + 개수 + 오른쪽 메타, 카드 목록, 하단 추가 버튼 */
-function Column({ title, count, meta, tint, children, footer }: { title: string; count?: number; meta?: string; tint?: boolean; children: ReactNode; footer?: ReactNode }) {
-  return (
-    <section className={`flex flex-col gap-2.5 rounded-3xl p-2.5 ${tint ? 'bg-accent-soft' : 'bg-sunken/70'}`}>
-      <header className="flex items-center gap-2 px-1.5 pt-1">
-        <h2 className="text-[15px] font-semibold">{title}</h2>
-        {count != null && <span className="count">{count}</span>}
-        {meta && <span className="num ml-auto text-xs text-ink-2">{meta}</span>}
-      </header>
-      {children}
-      {footer}
-    </section>
-  )
-}
-
-function AddButton() {
-  return (
-    <Link to="/subscriptions/new" className="rounded-2xl py-2.5 text-center text-sm text-ink-2 transition hover:bg-ink/5 hover:text-ink">
-      + 구독 추가
-    </Link>
-  )
+function cycleNote(sub: Subscription, perCycle: number): string | undefined {
+  return sub.cycleMonths > 1 ? `${sub.cycleMonths}개월 ${formatWon(perCycle)}` : undefined
 }
 
 export default function Dashboard() {
@@ -64,27 +40,33 @@ export default function Dashboard() {
     }
   }
 
-  const pmById = useMemo(() => new Map(data.paymentMethods.map((p) => [p.id, p])), [data.paymentMethods])
   const totals = computeTotals(data.subscriptions)
   const alerts = upcomingAlerts(data.subscriptions, today)
-  const upcoming = nextPayments(data.subscriptions, today)
 
-  const rows = useMemo(() => {
-    const list = data.subscriptions.map((sub) => ({
-      sub,
-      pct: achievementFor(sub, data, today),
-      monthly: sub.status === 'trial' ? monthlyCostAfterTrial(sub) : monthlyCost(sub),
-      date: sub.status === 'trial' && sub.trialEndDate ? sub.trialEndDate : sub.nextBillingDate,
-    }))
-    return list.sort((a, b) => {
-      if (sort === 'amount') return b.monthly - a.monthly
-      return a.date.localeCompare(b.date)
-    })
-  }, [data, today, sort])
-
-  const card = (sub: Subscription, pct: number | null) => (
-    <SubscriptionCard key={sub.id} sub={sub} pct={pct} pm={sub.paymentMethodId ? pmById.get(sub.paymentMethodId) : undefined} today={today} />
-  )
+  const { current, temporary } = useMemo(() => {
+    const pmName = new Map(data.paymentMethods.map((p) => [p.id, p.nickname]))
+    const toRow = (sub: Subscription): TableRow => {
+      const isTrial = sub.status === 'trial'
+      const date = isTrial && sub.trialEndDate ? sub.trialEndDate : sub.nextBillingDate
+      const days = diffDays(today, date)
+      const soon = days <= 3
+      return {
+        sub,
+        paymentName: pmName.get(sub.paymentMethodId ?? '') ?? '결제수단 없음',
+        date,
+        // 구독중은 지금 내는 월 금액, 체험은 종료 후 금액. 해지예정은 끝나면 더 내지 않으므로 0원
+        amount: isTrial ? monthlyCostAfterTrial(sub) : sub.status === 'canceling' ? 0 : monthlyCost(sub),
+        amountNote: isTrial ? cycleNote(sub, costPerCycle(sub, postTrialPrice(sub))) : sub.status === 'active' ? cycleNote(sub, costPerCycle(sub)) : undefined,
+        badge: <StatusBadge status={sub.status} />,
+        dateTag: <TimePill tone={days < 0 || (soon && !isTrial) ? 'danger' : soon ? 'warn' : 'neutral'}>{days < 0 ? '종료됨' : formatDday(days)}</TimePill>,
+      }
+    }
+    const rows = data.subscriptions.map(toRow).sort((a, b) => (sort === 'amount' ? b.amount - a.amount : a.date.localeCompare(b.date)))
+    return {
+      current: rows.filter((r) => r.sub.status === 'active'),
+      temporary: rows.filter((r) => r.sub.status !== 'active'),
+    }
+  }, [data.subscriptions, data.paymentMethods, today, sort])
 
   return (
     <div className="space-y-5">
@@ -132,63 +114,29 @@ export default function Dashboard() {
         </div>
       )}
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <Segmented label="정렬" value={sort} onChange={setSort} options={SORTS} className="w-full sm:w-auto" />
-        <p className="text-sm text-ink-2">구독 {data.subscriptions.length}개</p>
-      </div>
-
-      {data.subscriptions.length === 0 && (
+      {data.subscriptions.length === 0 ? (
         <div className="panel t-reveal p-6 text-center">
           <p className="text-lg font-semibold">아직 등록된 구독이 없어요</p>
-          <p className="mt-1 text-sm text-ink-2">쓰고 있는 구독을 추가하면 이번 달 실부담과 다음 결제를 한눈에 볼 수 있어요.</p>
+          <p className="mt-1 text-sm text-ink-2">쓰고 있는 구독을 추가하면 이번 달 실부담과 결제일을 한눈에 볼 수 있어요.</p>
           <Link to="/subscriptions/new" className="btn-primary mt-4">
             <Icon name="plus" size={16} />첫 구독 추가
           </Link>
         </div>
+      ) : (
+        <>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <Segmented label="정렬" value={sort} onChange={setSort} options={SORTS} className="w-full sm:w-auto" />
+            <p className="text-sm text-ink-2">구독 {data.subscriptions.length}개</p>
+          </div>
+
+          <div className="grid items-start gap-4 xl:grid-cols-2">
+            <SubscriptionTable title="구독중" rows={current} dateLabel="다음 결제" amountLabel="월 실부담" totalLabel="월 합계" empty="구독중인 서비스가 없어요" />
+            <SubscriptionTable title="무료체험·임시구독" rows={temporary} dateLabel="종료일" amountLabel="종료 후 월 금액" totalLabel="종료 후 월 합계" empty="무료체험이나 임시구독이 없어요" />
+          </div>
+        </>
       )}
 
-      {/* 보드 */}
-      <div className="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {COLUMNS.map((col) => {
-          const list = rows.filter((r) => r.sub.status === col.status)
-          const sum = list.reduce((s, r) => s + r.monthly, 0)
-          return (
-            <Column
-              key={col.status}
-              title={col.title}
-              count={list.length}
-              meta={list.length ? `${col.status === 'trial' ? '종료 후 ' : ''}월 ${formatWon(sum)}` : undefined}
-              footer={<AddButton />}
-            >
-              {list.length === 0 ? <p className="py-4 text-center text-sm text-ink-3">비어 있어요</p> : list.map((r) => card(r.sub, r.pct))}
-            </Column>
-          )
-        })}
-
-        {/* 다음 결제 3건 — 모바일에서는 맨 위로 */}
-        <div className="order-first md:order-none">
-          <Column title="다음 결제" count={upcoming.length} meta={`오늘 ${formatDate(today).slice(5)}`} tint>
-            {upcoming.map((a) => (
-              <Link key={a.subscription.id} to={`/subscriptions/${a.subscription.id}`} className="card block p-4 transition hover:-translate-y-0.5">
-                <div className="flex items-center gap-2.5">
-                  <Avatar name={a.subscription.name} />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-[15px] font-medium tracking-[-0.02em]">{a.subscription.name}</p>
-                    <p className="truncate text-xs text-ink-3">
-                      {a.kind === 'trial' ? '체험 종료 후 첫 결제' : (pmById.get(a.subscription.paymentMethodId ?? '')?.nickname ?? '정기 결제')}
-                    </p>
-                  </div>
-                  <p className="num text-[15px] font-semibold tracking-[-0.02em]">{formatWon(a.amount)}</p>
-                </div>
-                <div className="mt-3 flex items-center gap-2 text-xs text-ink-3">
-                  <span className="num">{formatDate(a.date).slice(5)}</span> ({weekday(a.date)})<TimePill tone={a.days <= 3 ? 'danger' : 'neutral'}>{formatDday(a.days)}</TimePill>
-                </div>
-              </Link>
-            ))}
-          </Column>
-        </div>
-      </div>
-
+      <PaymentCalendar subscriptions={data.subscriptions} today={today} />
     </div>
   )
 }

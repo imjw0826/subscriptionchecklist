@@ -36,6 +36,12 @@ export function diffDays(from: ISODate, to: ISODate): number {
   return Math.round((Date.UTC(b.y, b.m - 1, b.d) - Date.UTC(a.y, a.m - 1, a.d)) / 86_400_000)
 }
 
+/** 달력 칸: 일요일 시작, 1일 앞의 빈칸은 null */
+export function monthCells(y: number, m: number): (number | null)[] {
+  const blanks = new Date(y, m - 1, 1).getDay()
+  return [...Array<null>(blanks).fill(null), ...Array.from({ length: daysInMonth(y, m) }, (_, i) => i + 1)]
+}
+
 /** 'YYYY-MM' */
 export function monthKey(date: ISODate): string {
   return date.slice(0, 7)

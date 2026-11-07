@@ -35,22 +35,21 @@ function Skeleton() {
           </div>
         ))}
       </div>
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {[0, 1, 2, 3].map((i) => (
-          <div key={i} className="space-y-3 rounded-3xl bg-sunken/70 p-3">
+      <div className="grid gap-4 xl:grid-cols-2">
+        {[0, 1].map((i) => (
+          <div key={i} className="panel space-y-4 p-5">
             <div className={`h-4 w-24 ${bar}`} />
-            {[0, 1].map((j) => (
-              <div key={j} className="card space-y-3 p-4">
-                <div className="flex items-center gap-2">
-                  <div className={`h-8 w-8 rounded-full ${bar}`} />
-                  <div className={`h-4 w-24 ${bar}`} />
-                </div>
-                <div className={`h-3 w-32 ${bar}`} />
+            {[0, 1, 2].map((j) => (
+              <div key={j} className="flex items-center gap-3">
+                <div className={`h-8 w-8 rounded-full ${bar}`} />
+                <div className={`h-4 flex-1 ${bar}`} />
+                <div className={`h-4 w-16 ${bar}`} />
               </div>
             ))}
           </div>
         ))}
       </div>
+      <div className={`h-80 rounded-3xl ${bar}`} />
     </div>
   )
 }

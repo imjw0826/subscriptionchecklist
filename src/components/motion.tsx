@@ -108,26 +108,6 @@ export function Segmented<T extends string>({
   )
 }
 
-/** Checkbox check: 박스가 채워진 뒤 체크 표시가 선으로 그려진다 */
-export function Checkbox({ checked, onClick, label }: { checked: boolean; onClick: () => void; label: string }) {
-  return (
-    <button
-      type="button"
-      role="checkbox"
-      aria-checked={checked}
-      aria-label={label}
-      onClick={onClick}
-      className={`t-check flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-[1.5px] text-on-accent ${
-        checked ? 'border-accent bg-accent' : 'border-dashed border-ink-3 bg-transparent hover:border-solid hover:border-ink-2'
-      }`}
-    >
-      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M5 12.5l4.5 4.5L19 7.5" />
-      </svg>
-    </button>
-  )
-}
-
 /** Accordion: 조건부 영역을 grid-rows 0fr → 1fr 로 펼친다. 닫힌 동안은 inert로 포커스를 막는다 */
 export function Collapse({ open, children }: { open: boolean; children: ReactNode }) {
   return (

@@ -41,21 +41,13 @@ export interface PaymentMethod {
 
 export type ResetCycle = 'monthly' | 'none'
 
+/** 예전 혜택 체크리스트의 항목. 지금은 카탈로그에 없는 구독의 혜택 안내 문장에만 읽어서 쓴다 */
 export interface Benefit {
   id: string
   subscriptionId: string
   name: string
   resetCycle: ResetCycle
   estimatedValue: number
-}
-
-export interface BenefitUse {
-  id: string
-  benefitId: string
-  subscriptionId: string
-  date: ISODate
-  savedAmount: number
-  note: string
 }
 
 export interface UsageLog {
@@ -69,7 +61,6 @@ export interface AppData {
   subscriptions: Subscription[]
   paymentMethods: PaymentMethod[]
   benefits: Benefit[]
-  benefitUses: BenefitUse[]
   usageLogs: UsageLog[]
 }
 

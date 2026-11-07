@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { CatalogItem } from '../lib/catalog'
+import { benefitParagraphs, type CatalogItem } from '../lib/catalog'
 import { useCatalog } from '../lib/useCatalog'
 import { formatDate } from '../lib/date'
 import { Collapse } from './motion'
@@ -28,7 +28,7 @@ function Items({ items }: { items: CatalogItem[] }) {
   )
 }
 
-/** 카탈로그에서 고른 요금제의 공식 혜택·유의사항·출처 */
+/** 카탈로그에서 고른 요금제의 혜택(줄글)·유의사항·출처 */
 export default function PlanInfo({ catalogId }: { catalogId: string }) {
   const catalog = useCatalog()
   const [showNotes, setShowNotes] = useState(false)
@@ -45,8 +45,13 @@ export default function PlanInfo({ catalogId }: { catalogId: string }) {
       </p>
       <p className="mb-4 text-sm whitespace-pre-line text-ink-2">{plan.priceText}</p>
 
-      <p className="mb-2 text-sm text-ink-3">포함 혜택 {plan.benefits.length}개</p>
-      <Items items={plan.benefits} />
+      <h3 className="mb-1.5 text-sm font-semibold">이런 혜택이 있어요</h3>
+      <div className="max-w-[68ch] space-y-2.5 text-sm leading-7 text-ink-2">
+        {benefitParagraphs(plan).map((text, i) => (
+          <p key={i}>{text}</p>
+        ))}
+      </div>
+      {plan.benefits.some((b) => b.supplemented) && <p className="mt-2 text-xs text-ink-3">일부 내용은 공식 페이지에서 확인되지 않아 다른 출처로 보완했어요.</p>}
 
       {plan.notes.length > 0 && (
         <div className="mt-4 border-t border-line pt-3">

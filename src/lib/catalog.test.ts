@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import md from '../data/catalog.md?raw'
-import { checklistNames, defaultDetail, parseCatalog, parsePrices, searchCatalog, subscriptionName } from './catalog'
+import { benefitParagraphs, defaultDetail, parseCatalog, parsePrices, searchCatalog, subscriptionName } from './catalog'
 
 const catalog = parseCatalog(md)
 const plan = (service: number, name: string) => catalog.plans.find((p) => p.serviceNo === service && p.plan === name)!
@@ -121,11 +121,19 @@ describe('구독으로 변환', () => {
     expect(defaultDetail(plan(1, '프리미엄'))).toEqual({ detailType: 'usage', usageUnit: 'minutes' })
     expect(defaultDetail(plan(28, 'Plus'))).toEqual({ detailType: 'usage', usageUnit: 'count' })
   })
-  it('체크리스트 이름: 40자 이내, 하위 항목 펼침, 기간 한정 프로모션 제외', () => {
-    const names = checklistNames(plan(20, '멤버스 코어 (무배형)'))
-    expect(names).toContain('무료배송 쿠폰 31장')
-    expect(names.some((n) => n.startsWith('[프로모션'))).toBe(false)
-    expect(names.every((n) => n.length <= 40)).toBe(true)
-    expect(checklistNames(plan(15, '와우 멤버십'))[0]).toBe('로켓배송 상품 무료배송')
+  it('혜택 줄글: 모든 혜택을 문장으로 잇고 네 문장씩 문단을 나눈다', () => {
+    const wow = plan(15, '와우 멤버십')
+    const paragraphs = benefitParagraphs(wow)
+    expect(paragraphs[0].startsWith('로켓배송 상품 무료배송: 최소 구매금액 없이 1개만 구매해도 무료배송.')).toBe(true)
+    expect(paragraphs).toHaveLength(Math.ceil(wow.benefits.length / 4))
+  })
+  it('혜택 줄글: 하위 항목은 쉼표로 잇는다', () => {
+    const text = benefitParagraphs(plan(20, '멤버스 코어 (무배형)')).join(' ')
+    expect(text).toContain('무료배송 쿠폰 31장')
+  })
+  it('혜택 줄글: 모든 요금제가 빈 문단 없이 마침표로 끝난다', () => {
+    for (const p of catalog.plans) {
+      for (const text of benefitParagraphs(p)) expect(text, p.id).toMatch(/[.!?…]$/)
+    }
   })
 })

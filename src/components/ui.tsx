@@ -224,32 +224,6 @@ export function Avatar({ name, size = 32, muted }: { name: string; size?: number
   )
 }
 
-/** 원형 진행률 — 달성률과 관계없이 한 가지 색. 100%를 넘으면 링은 가득 찬 상태 */
-export function ProgressRing({ pct, size = 40 }: { pct: number | null; size?: number }) {
-  const r = 15
-  const c = 2 * Math.PI * r
-  const filled = (Math.min(Math.max(pct ?? 0, 0), 100) / 100) * c
-  return (
-    <span className="relative inline-flex shrink-0 items-center justify-center" style={{ width: size, height: size }} aria-label={pct == null ? '달성률 없음' : `이번 달 본전 ${pct}%`}>
-      <svg viewBox="0 0 36 36" className="absolute inset-0 -rotate-90">
-        <circle cx="18" cy="18" r={r} fill="none" strokeWidth="3.5" className="stroke-sunken" />
-        <circle
-          cx="18"
-          cy="18"
-          r={r}
-          fill="none"
-          strokeWidth="3.5"
-          strokeLinecap="round"
-          strokeDasharray={`${filled} ${c}`}
-          className="stroke-ok"
-          style={{ transition: 'stroke-dasharray 600ms var(--ease-out-expo)', opacity: pct ? 1 : 0 }}
-        />
-      </svg>
-      <span className={`num relative text-[10px] font-semibold tracking-[-0.03em] ${pct == null ? 'text-ink-3' : 'text-ink-2'}`}>{pct == null ? '—' : `${pct}%`}</span>
-    </span>
-  )
-}
-
 /** 페이지 제목 + 오른쪽 액션 */
 export function PageHeader({ title, children, back }: { title: ReactNode; children?: ReactNode; back?: ReactNode }) {
   return (

@@ -330,21 +330,24 @@ export function subscriptionName(plan: CatalogPlan): string {
   return `${s} ${p}`
 }
 
-/** 쇼핑·배달 멤버십과 T우주는 혜택 체크리스트형, 나머지는 이용 추적형 */
+/** 쇼핑·배달 멤버십과 T우주는 혜택 안내형, 나머지는 이용 추적형 */
 export function defaultDetail(plan: CatalogPlan): { detailType: DetailType; usageUnit: UsageUnit } {
   if (plan.group.startsWith('쇼핑')) return { detailType: 'benefit', usageUnit: 'count' }
   const minutes = plan.group === 'OTT' || plan.group === '음악' || plan.group.startsWith('도서')
   return { detailType: 'usage', usageUnit: minutes ? 'minutes' : 'count' }
 }
 
-/** 체크리스트용 짧은 혜택 이름 (40자). 하위 항목이 있으면 하위 항목을 각각 혜택으로 */
-export function checklistNames(plan: CatalogPlan): string[] {
-  const shorten = (t: string) => {
-    const head = t.split(/\s[:：]\s|\s\(|\(/)[0].trim()
-    return head.length > 40 ? head.slice(0, 39) + '…' : head
-  }
-  // 기간 한정 프로모션은 매달 쓰는 혜택이 아니므로 뺀다
-  return plan.benefits
-    .filter((b) => !b.text.startsWith('[프로모션'))
-    .flatMap((b) => (b.children.length ? b.children.map(shorten) : [shorten(b.text)]))
+/** 혜택 하나를 문장으로: "이름 : 설명" → "이름: 설명.", 하위 항목은 쉼표로 잇는다 */
+function benefitSentence(item: CatalogItem): string {
+  const text = item.text.replace(/\s*[:：]\s*$/, '').replace(/\s+[:：]\s+/g, ': ')
+  const body = item.children.length ? `${text}: ${item.children.join(', ')}` : text
+  return /[.!?…]$/.test(body) ? body : `${body}.`
+}
+
+/** 요금제 혜택을 줄글 문단으로 만든다. 읽기 좋게 네 문장씩 나눈다 */
+export function benefitParagraphs(plan: CatalogPlan, perParagraph = 4): string[] {
+  const sentences = plan.benefits.map(benefitSentence)
+  const paragraphs: string[] = []
+  for (let i = 0; i < sentences.length; i += perParagraph) paragraphs.push(sentences.slice(i, i + perParagraph).join(' '))
+  return paragraphs
 }

@@ -2,10 +2,9 @@ import { Link, useParams } from 'react-router-dom'
 import { useStore } from '../store/StoreContext'
 import { baselineMonthlyCost, monthlyCost, postTrialPrice } from '../lib/calc'
 import { diffDays, formatDate, formatDday } from '../lib/date'
-import { formatWon } from '../lib/format'
+import { formatWon, paymentLabel } from '../lib/format'
 import { Avatar, Icon, PageHeader, Stat, StatGroup, StatusBadge } from '../components/ui'
-import { paymentLabel } from '../components/SubscriptionCard'
-import BenefitDetail from '../components/BenefitDetail'
+import BenefitNote from '../components/BenefitNote'
 import UsageDetail from '../components/UsageDetail'
 import PlanInfo from '../components/PlanInfo'
 
@@ -81,9 +80,9 @@ export default function SubscriptionDetail() {
 
       {sub.memo && <p className="rounded-2xl bg-sunken px-4 py-3 text-sm whitespace-pre-wrap text-ink-2">{sub.memo}</p>}
 
-      {sub.detailType === 'benefit' ? <BenefitDetail sub={sub} monthly={monthly} /> : <UsageDetail sub={sub} monthly={monthly} />}
+      {sub.detailType === 'usage' && <UsageDetail sub={sub} monthly={monthly} />}
 
-      {sub.catalogId && <PlanInfo catalogId={sub.catalogId} />}
+      {sub.catalogId ? <PlanInfo catalogId={sub.catalogId} /> : sub.detailType === 'benefit' && <BenefitNote subscriptionId={sub.id} />}
     </div>
   )
 }

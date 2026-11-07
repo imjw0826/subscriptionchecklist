@@ -1,6 +1,6 @@
 # 구독 체크리스트
 
-개인용 정기구독 관리 웹앱. 월 실부담 총액, 다음 결제, 구독별 본전 달성률을 한 화면에서 봅니다. (PRD: `구독 관리 웹앱 PRD.md`)
+개인용 정기구독 관리 웹앱. 월 실부담 총액, 구독 목록, 이번 달 결제 달력을 한 화면에서 봅니다. (PRD: `구독 관리 웹앱 PRD.md`)
 
 React + TypeScript + Vite + Tailwind CSS v4 · Supabase · Vitest
 
@@ -21,9 +21,9 @@ Supabase 환경변수가 없으면 **로컬 모드**로 동작합니다. 데이�
 
 1. [supabase.com](https://supabase.com)에서 새 프로젝트 생성 (Region: Northeast Asia (Seoul))
 2. **SQL Editor**에 `supabase/schema.sql` 전체를 붙여넣고 **Run** — 테이블 5개와 "본인 행만 접근" 보안 정책(RLS)이 만들어집니다
-3. **Authentication → Users → Add user → Create new user**로 본인 이메일 계정 1개 생성
-4. **Authentication → Sign In / Providers**에서 *Allow new users to sign up* 끄기 (앱도 새 계정 생성을 막음)
-5. (선택) 기본 메일 템플릿은 링크만 있습니다. 커스텀 SMTP를 설정하면 **Authentication → Emails**에서 Magic Link·Confirm sign up 템플릿에 `{{ .Token }}`을 넣어 6자리 코드 로그인도 쓸 수 있습니다
+3. **Authentication → Users → Add user → Create new user**에서 `아이디@subscriptionchecklist.vercel.app` 형식의 이메일과 비밀번호로 계정 1개 생성 (*Auto Confirm User* 켜기). 메일은 오가지 않고 앱에서는 `아이디`만 입력합니다
+4. **Authentication → Sign In / Providers**에서 *Allow new users to sign up* 끄기 (앱에도 가입 화면이 없음)
+5. 실제 이메일을 그대로 아이디로 써도 됩니다. 입력값에 `@`가 있으면 이메일로 로그인합니다
 6. **Project Settings → API**에서 `Project URL`과 `anon public`(또는 publishable) 키 복사
 
 ### 2. Vercel — 웹 배포
@@ -32,9 +32,22 @@ Supabase 환경변수가 없으면 **로컬 모드**로 동작합니다. 데이�
 2. Framework는 Vite로 자동 인식됩니다. **Environment Variables**에 두 개 추가 후 **Deploy**
    - `VITE_SUPABASE_URL` = Project URL
    - `VITE_SUPABASE_ANON_KEY` = anon public 키
-3. 배포 주소(예: `https://subscriptionchecklist.vercel.app`)를 Supabase **Authentication → URL Configuration**의 Site URL과 Redirect URLs에 추가
 
 이후 GitHub `main`에 push하면 자동으로 다시 배포됩니다.
+
+### 매직링크 계정을 아이디·비밀번호로 전환
+
+기존 계정을 그대로 쓰면 구독 데이터도 그대로 유지됩니다. Supabase **SQL Editor**에서 아이디·비밀번호·기존 이메일을 바꿔 실행하세요.
+
+```sql
+update auth.users
+set email = '아이디@subscriptionchecklist.vercel.app',
+    encrypted_password = extensions.crypt('비밀번호', extensions.gen_salt('bf')),
+    email_confirmed_at = coalesce(email_confirmed_at, now())
+where email = '기존이메일@example.com';
+```
+
+아이디를 바꾸지 않고 기존 이메일로 로그인하려면 `email` 줄만 빼고 실행합니다.
 
 ### 로컬에서 클라우드 DB로 실행
 
@@ -49,24 +62,25 @@ anon 키는 브라우저에 공개되는 용도의 키라 괜찮지만, `service
 
 ```
 src/
-  types.ts                 데이터 모델 (Subscription, PaymentMethod, Benefit, BenefitUse, UsageLog)
+  types.ts                 데이터 모델 (Subscription, PaymentMethod, Benefit, UsageLog)
   lib/calc.ts              계산 규칙 (순수 함수) + calc.test.ts
   lib/date.ts, format.ts   날짜(월말 보정, D-day)·금액 포맷
   store/repo.ts            저장소 추상화: localStorage / Supabase
   store/StoreContext.tsx   앱 상태와 CRUD, 지난 결제일 자동 갱신
   pages/                   대시보드, 상세, 구독 추가·편집, 결제수단, 로그인
-  components/              카드, 혜택형/이용형 상세, 모션·토스트, 공통 UI
+  components/              구독 표, 결제 달력, 이용형 상세, 요금제 안내, 모션·토스트, 공통 UI
 supabase/schema.sql        테이블 + RLS
 ```
 
 ## PRD 해석 메모
 
 - **결제 배너**: 결제일 D-3 ~ D-DAY인 구독중(active) 구독을 표시합니다. 무료체험은 종료일 D-3 이내(지난 경우 포함)를 표시합니다.
-- **무료체험 달성률**: 체험 중 실부담은 0원이라, 혜택형 달성률은 *체험 종료 후 월 실부담액*을 기준으로 계산합니다.
 - **무료체험 결제일**: 체험 중인 구독은 다음 결제일 = 체험 종료일이며 자동 갱신하지 않습니다. 체험이 끝나면 상태를 직접 바꿔주세요.
 - **월말 결제일**: 1/31 → 2/28 → 3/31처럼 원래 날짜를 기준으로 주기를 더해 날짜가 밀리지 않습니다.
 - **연 환산**: 월 환산액(반올림)×12가 아니라 주기당 금액×12/주기로 계산해 반올림 오차를 없앴습니다.
-- **혜택 체크 해제**: 체크된 혜택을 다시 누르면 해당 기간(매월 리셋이면 이번 달)의 사용 기록을 삭제합니다. 같은 달에 여러 번 쓰면 “+ 또 사용”으로 추가 기록합니다.
+- **임시구독**: 해지예정 구독을 뜻합니다. 대시보드에서 무료체험과 같은 표에 나오고, 끝나면 더 내지 않으므로 종료 후 월 금액은 0원입니다.
+- **결제 달력**: 구독중은 결제 주기로 이번 달 결제일을 계산해 이미 지난 날짜도 표시합니다. 무료체험은 종료일의 첫 결제만, 해지예정과 0원 구독은 표시하지 않습니다.
+- **혜택 안내**: 혜택 체크리스트는 없앴고, 카탈로그 요금제의 혜택을 줄글로 보여줍니다. 카탈로그에 없는 구독은 예전에 등록한 혜택 이름을 문장으로 보여줍니다. `benefits`, `benefit_uses` 테이블과 기존 기록은 그대로 남겨 둡니다.
 
 ## 서비스 로고
 

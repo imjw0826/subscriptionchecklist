@@ -2,21 +2,19 @@ import { describe, expect, it } from 'vitest'
 import type { Subscription } from '../types'
 import {
   achievementLevel,
-  benefitAchievement,
   computeTotals,
   costPerCycle,
   costPerUnit,
-  isBenefitChecked,
   monthlyCost,
-  monthlySavings,
   monthlyUsage,
+  paymentsInMonth,
   rollBillingDate,
   subscriptionsToRoll,
   subtotalsByPaymentMethod,
   upcomingAlerts,
   usageAchievement,
 } from './calc'
-import { addMonths, diffDays } from './date'
+import { addMonths, diffDays, monthCells } from './date'
 
 function sub(p: Partial<Subscription> = {}): Subscription {
   return {
@@ -105,19 +103,6 @@ describe('월 총액', () => {
 })
 
 describe('달성률', () => {
-  const uses = [
-    { id: 'u1', benefitId: 'b1', subscriptionId: 's1', date: '2026-09-02', savedAmount: 3000, note: '' },
-    { id: 'u2', benefitId: 'b1', subscriptionId: 's1', date: '2026-09-20', savedAmount: 4000, note: '' },
-    { id: 'u3', benefitId: 'b1', subscriptionId: 's1', date: '2026-08-31', savedAmount: 9999, note: '' },
-    { id: 'u4', benefitId: 'b2', subscriptionId: 's2', date: '2026-09-10', savedAmount: 1000, note: '' },
-  ]
-  it('이번 달(달력 기준) 절약액만 합산', () => {
-    expect(monthlySavings(uses, 's1', '2026-09-30')).toBe(7000)
-  })
-  it('혜택형 달성률', () => {
-    expect(benefitAchievement(7000, 7890)).toBe(89)
-    expect(benefitAchievement(0, 0)).toBeNull()
-  })
   it('이용형 달성률', () => {
     const logs = [
       { id: 'l1', subscriptionId: 's1', date: '2026-09-01', amount: 600 },
@@ -143,14 +128,52 @@ describe('달성률', () => {
   })
 })
 
-describe('혜택 체크 초기화', () => {
-  const uses = [{ id: 'u', benefitId: 'b', subscriptionId: 's', date: '2026-08-15', savedAmount: 1000, note: '' }]
-  it('매월 리셋 혜택은 새 달이 되면 체크 해제', () => {
-    expect(isBenefitChecked('monthly', uses, '2026-08-31')).toBe(true)
-    expect(isBenefitChecked('monthly', uses, '2026-09-01')).toBe(false)
+describe('달력 결제 목록', () => {
+  const dates = (p: Partial<Subscription>, month = '2026-11') => paymentsInMonth([sub(p)], month).map((x) => x.date)
+
+  it('다음 결제일이 이번 달이면 그 날', () => {
+    expect(dates({ nextBillingDate: '2026-11-20' })).toEqual(['2026-11-20'])
   })
-  it('리셋 없음은 계속 체크', () => {
-    expect(isBenefitChecked('none', uses, '2026-12-01')).toBe(true)
+  it('이미 지나 다음 달로 넘어간 결제일도 이번 달에 표시', () => {
+    expect(dates({ nextBillingDate: '2026-12-03' })).toEqual(['2026-11-03'])
+  })
+  it('없는 날짜는 말일로', () => {
+    expect(dates({ nextBillingDate: '2026-12-31' })).toEqual(['2026-11-30'])
+  })
+  it('주기가 맞는 달에만 표시', () => {
+    expect(dates({ cycleMonths: 3, nextBillingDate: '2027-02-15' })).toEqual(['2026-11-15'])
+    expect(dates({ cycleMonths: 3, nextBillingDate: '2027-01-15' })).toEqual([])
+    expect(dates({ cycleMonths: 12, nextBillingDate: '2027-11-15' })).toEqual(['2026-11-15'])
+  })
+  it('체험은 종료일에 종료 후 금액으로, 다른 달에는 표시하지 않음', () => {
+    const trial = sub({ status: 'trial', trialEndDate: '2026-11-09', nextBillingDate: '2026-11-09', priceAfterTrial: 9900 })
+    expect(paymentsInMonth([trial], '2026-11')).toMatchObject([{ kind: 'trial', date: '2026-11-09', amount: 9900 }])
+    expect(paymentsInMonth([trial], '2026-12')).toEqual([])
+  })
+  it('해지예정과 0원 구독은 제외', () => {
+    expect(dates({ status: 'canceling', nextBillingDate: '2026-11-20' })).toEqual([])
+    expect(dates({ myShareOverride: 0, nextBillingDate: '2026-11-20' })).toEqual([])
+  })
+  it('주기 금액을 실부담으로 표시하고 날짜순 정렬', () => {
+    const list = paymentsInMonth(
+      [sub({ id: 'a', nextBillingDate: '2026-11-20' }), sub({ id: 'b', listPrice: 44000, cycleMonths: 12, nextBillingDate: '2027-11-05' })],
+      '2026-11',
+    )
+    expect(list.map((p) => [p.subscription.id, p.amount])).toEqual([
+      ['b', 44000],
+      ['a', 10000],
+    ])
+  })
+})
+
+describe('달력 칸', () => {
+  it('1일 앞에 요일만큼 빈칸', () => {
+    const cells = monthCells(2026, 11) // 2026-11-01은 일요일
+    expect(cells[0]).toBe(1)
+    expect(cells).toHaveLength(30)
+    const dec = monthCells(2026, 12) // 2026-12-01은 화요일
+    expect(dec.slice(0, 3)).toEqual([null, null, 1])
+    expect(dec).toHaveLength(33)
   })
 })
 

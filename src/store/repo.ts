@@ -13,10 +13,10 @@ export interface Repository {
   remove(table: TableName, ids: string[]): Promise<void>
 }
 
-export const TABLES: TableName[] = ['paymentMethods', 'subscriptions', 'benefits', 'benefitUses', 'usageLogs']
+export const TABLES: TableName[] = ['paymentMethods', 'subscriptions', 'benefits', 'usageLogs']
 
 export function emptyData(): AppData {
-  return { subscriptions: [], paymentMethods: [], benefits: [], benefitUses: [], usageLogs: [] }
+  return { subscriptions: [], paymentMethods: [], benefits: [], usageLogs: [] }
 }
 
 // ---------- 로컬 모드 ----------
@@ -71,7 +71,6 @@ const SQL_TABLE: Record<TableName, string> = {
   subscriptions: 'subscriptions',
   paymentMethods: 'payment_methods',
   benefits: 'benefits',
-  benefitUses: 'benefit_uses',
   usageLogs: 'usage_logs',
 }
 

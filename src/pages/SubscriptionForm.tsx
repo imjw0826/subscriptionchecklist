@@ -1,26 +1,18 @@
 import { useState, type FormEvent, type ReactNode } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import type { Benefit, DetailType, DiscountType, ResetCycle, Subscription, SubscriptionStatus, UsageUnit } from '../types'
+import type { DetailType, DiscountType, Subscription, SubscriptionStatus, UsageUnit } from '../types'
 import { useStore } from '../store/StoreContext'
 import { costPerCycle, monthlyCost } from '../lib/calc'
 import { addMonths } from '../lib/date'
-import { formatWon, newId } from '../lib/format'
+import { formatWon, newId, paymentLabel } from '../lib/format'
 import { Field, Icon, NumberInput, PageHeader } from '../components/ui'
-import { paymentLabel } from '../components/SubscriptionCard'
 import { Collapse, Segmented, shakeErrors } from '../components/motion'
 import { useToast } from '../components/Toast'
 import CatalogSearch from '../components/CatalogSearch'
-import { checklistNames, defaultDetail, subscriptionName, type CatalogPlan, type PriceOption } from '../lib/catalog'
+import { defaultDetail, subscriptionName, type CatalogPlan, type PriceOption } from '../lib/catalog'
 import { useCatalog } from '../lib/useCatalog'
 
 type Num = number | ''
-
-interface BenefitDraft {
-  id: string
-  name: string
-  resetCycle: ResetCycle
-  estimatedValue: Num
-}
 
 interface Draft {
   name: string
@@ -43,14 +35,13 @@ interface Draft {
   /** count면 회, minutes면 시간 단위로 입력 */
   usageTargetInput: Num
   memo: string
-  benefits: BenefitDraft[]
   catalogId: string | null
 }
 
 const CYCLES = ['1', '3', '6', '12'] as const
 const CATEGORIES = ['OTT', '음악', '쇼핑', '클라우드', '도서', '생산성', '게임', '기타']
 
-function toDraft(sub: Subscription | undefined, benefits: Benefit[], today: string): Draft {
+function toDraft(sub: Subscription | undefined, today: string): Draft {
   if (!sub) {
     return {
       name: '',
@@ -72,7 +63,6 @@ function toDraft(sub: Subscription | undefined, benefits: Benefit[], today: stri
       usageUnit: 'count',
       usageTargetInput: '',
       memo: '',
-      benefits: [],
       catalogId: null,
     }
   }
@@ -97,7 +87,6 @@ function toDraft(sub: Subscription | undefined, benefits: Benefit[], today: stri
     usageUnit: sub.usageUnit,
     usageTargetInput: sub.usageTarget ? (sub.usageUnit === 'minutes' ? +(sub.usageTarget / 60).toFixed(2) : sub.usageTarget) : '',
     memo: sub.memo,
-    benefits: benefits.map((b) => ({ id: b.id, name: b.name, resetCycle: b.resetCycle, estimatedValue: b.estimatedValue })),
     catalogId: sub.catalogId ?? null,
   }
 }
@@ -134,10 +123,6 @@ function validate(d: Draft): Errors {
     e.shareCount = '공유 인원은 1명 이상이어야 해요'
   if (d.shareMode === 'fixed' && !nonNeg(d.myShareOverride)) e.myShareOverride = '내가 내는 금액을 입력하세요'
   if (d.detailType === 'usage' && (d.usageTargetInput === '' || d.usageTargetInput <= 0)) e.usageTarget = '본전 기준을 0보다 크게 입력하세요'
-  d.benefits.forEach((b, i) => {
-    if (!b.name.trim()) e[`benefit-${i}-name`] = '혜택 이름을 입력하세요'
-    if (!nonNeg(b.estimatedValue)) e[`benefit-${i}-value`] = '0 이상'
-  })
   return e
 }
 
@@ -158,13 +143,7 @@ export default function SubscriptionForm() {
   const { data, today, saveSubscription, deleteSubscription } = useStore()
   const toast = useToast()
   const existing = id ? data.subscriptions.find((s) => s.id === id) : undefined
-  const [d, setD] = useState<Draft>(() =>
-    toDraft(
-      existing,
-      data.benefits.filter((b) => b.subscriptionId === id),
-      today,
-    ),
-  )
+  const [d, setD] = useState<Draft>(() => toDraft(existing, today))
   const [submitted, setSubmitted] = useState(false)
   const [saving, setSaving] = useState(false)
   const catalog = useCatalog()
@@ -211,12 +190,10 @@ export default function SubscriptionForm() {
     }
   }
 
-  /** 카탈로그 요금제를 고르면 이름·카테고리·가격·주기·상세 유형·혜택을 채운다 */
+  /** 카탈로그 요금제를 고르면 이름·카테고리·가격·주기·상세 유형을 채운다 */
   function applyPlan(plan: CatalogPlan) {
     const price = plan.prices[0]
     const detail = defaultDetail(plan)
-    const importBenefits = detail.detailType === 'benefit'
-    const replaceBenefits = importBenefits && (d.benefits.length === 0 || confirm('입력해 둔 혜택 항목을 이 요금제의 혜택으로 바꿀까요?'))
     setD((p) => ({
       ...p,
       name: subscriptionName(plan),
@@ -225,9 +202,6 @@ export default function SubscriptionForm() {
       ...(price ? { listPrice: price.price, ...cycleDraft(price.cycleMonths) } : { listPrice: '' }),
       detailType: detail.detailType,
       usageUnit: detail.usageUnit,
-      benefits: replaceBenefits
-        ? checklistNames(plan).map((name) => ({ id: newId(), name, resetCycle: 'monthly' as ResetCycle, estimatedValue: 0 }))
-        : p.benefits,
     }))
     toast(`${subscriptionName(plan)} 요금제 정보를 불러왔어요`)
   }
@@ -251,13 +225,9 @@ export default function SubscriptionForm() {
       return
     }
     const sub = toSubscription()
-    const benefits: Benefit[] | undefined =
-      d.detailType === 'benefit'
-        ? d.benefits.map((b) => ({ id: b.id, subscriptionId: sub.id, name: b.name.trim(), resetCycle: b.resetCycle, estimatedValue: Number(b.estimatedValue) || 0 }))
-        : undefined
     setSaving(true)
     try {
-      await saveSubscription(sub, benefits)
+      await saveSubscription(sub)
       toast(existing ? '변경사항을 저장했어요' : `${sub.name}을(를) 추가했어요`)
       navigate(`/subscriptions/${sub.id}`, { replace: true })
     } catch {
@@ -272,12 +242,6 @@ export default function SubscriptionForm() {
     toast(`${existing.name}을(를) 삭제했어요`)
     navigate('/', { replace: true })
   }
-
-  const updateBenefit = (i: number, patch: Partial<BenefitDraft>) =>
-    set(
-      'benefits',
-      d.benefits.map((b, j) => (j === i ? { ...b, ...patch } : b)),
-    )
 
   return (
     <form onSubmit={submit} noValidate className="mx-auto max-w-xl space-y-4">
@@ -487,13 +451,13 @@ export default function SubscriptionForm() {
           value={d.detailType}
           onChange={(v) => set('detailType', v)}
           options={[
-            { value: 'benefit', label: '혜택 체크리스트형' },
+            { value: 'benefit', label: '혜택 안내형' },
             { value: 'usage', label: '이용 추적형' },
           ]}
         />
         <p className="text-xs text-ink-2">
           {d.detailType === 'benefit'
-            ? '쿠팡와우·네이버플러스처럼 혜택을 쓸 때마다 절약액을 기록해요. 이번 달 절약액 ÷ 월 실부담액이 달성률이에요.'
+            ? '쿠팡와우·네이버플러스처럼 혜택이 중심인 구독이에요. 상세 페이지에서 요금제 혜택을 글로 안내해요. 목록에 없는 서비스는 메모에 적어 두세요.'
             : '유튜브 프리미엄·클라우드처럼 이용 횟수나 시간을 기록해요. 이번 달 이용량 ÷ 본전 기준이 달성률이에요.'}
         </p>
 
@@ -525,66 +489,6 @@ export default function SubscriptionForm() {
                   invalid={!!err('usageTarget')}
                 />
               </Field>
-            </div>
-          </Collapse>
-          <Collapse open={d.detailType === 'benefit'}>
-            <div className="space-y-3">
-              <span className="label">혜택 항목</span>
-              {d.benefits.length === 0 && <p className="text-sm text-ink-2">아래 버튼으로 혜택을 추가하세요.</p>}
-              {d.benefits.map((b, i) => (
-                <div
-                  key={b.id}
-                  className="space-y-2 rounded-xl border border-line p-3"
-                  data-error={err(`benefit-${i}-name`) || err(`benefit-${i}-value`) ? '' : undefined}
-                >
-                  <div className="flex gap-2">
-                    <input
-                      className={`input ${err(`benefit-${i}-name`) ? 'input-error' : ''}`}
-                      placeholder="혜택 이름 (예: 무료배송)"
-                      value={b.name}
-                      maxLength={40}
-                      onChange={(e) => updateBenefit(i, { name: e.target.value })}
-                    />
-                    <button
-                      type="button"
-                      className="btn-danger shrink-0 px-3"
-                      aria-label="혜택 삭제"
-                      onClick={() =>
-                        set(
-                          'benefits',
-                          d.benefits.filter((_, j) => j !== i),
-                        )
-                      }
-                    >
-                      삭제
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <select className="input" value={b.resetCycle} onChange={(e) => updateBenefit(i, { resetCycle: e.target.value as ResetCycle })} aria-label="리셋 주기">
-                      <option value="monthly">매월 리셋</option>
-                      <option value="none">리셋 없음</option>
-                    </select>
-                    <NumberInput
-                      value={b.estimatedValue}
-                      onChange={(v) => updateBenefit(i, { estimatedValue: v })}
-                      suffix="원"
-                      min={0}
-                      placeholder="1회 가치"
-                      invalid={!!err(`benefit-${i}-value`)}
-                    />
-                  </div>
-                </div>
-              ))}
-              <button
-                type="button"
-                className="btn-ghost w-full"
-                onClick={() => set('benefits', [...d.benefits, { id: newId(), name: '', resetCycle: 'monthly', estimatedValue: '' }])}
-              >
-                + 혜택 추가
-              </button>
-              {existing && data.benefits.some((b) => b.subscriptionId === existing.id && !d.benefits.some((x) => x.id === b.id)) && (
-                <p className="text-xs text-danger-ink">삭제한 혜택의 사용 기록도 함께 삭제돼요.</p>
-              )}
             </div>
           </Collapse>
         </div>

@@ -193,11 +193,6 @@ body {
   /* Tabs sliding */
   --tabs-dur: 250ms;
 
-  /* Checkbox check */
-  --check-box: 150ms;
-  --check-draw: 350ms;
-  --check-uncheck: 150ms;
-
   /* Toast open / close */
   --toast-open: 350ms;
   --toast-close: 250ms;
@@ -297,22 +292,6 @@ body {
     transform var(--tabs-dur) var(--ease-out-expo),
     width var(--tabs-dur) var(--ease-out-expo),
     height var(--tabs-dur) var(--ease-out-expo);
-}
-
-/* ---------- Checkbox check ---------- */
-.t-check {
-  transition:
-    background-color var(--check-box) var(--ease-out-expo),
-    border-color var(--check-box) var(--ease-out-expo);
-}
-.t-check path {
-  stroke-dasharray: 20;
-  stroke-dashoffset: 20;
-  transition: stroke-dashoffset var(--check-uncheck) var(--ease-out-expo);
-}
-.t-check[aria-checked='true'] path {
-  stroke-dashoffset: 0;
-  transition: stroke-dashoffset var(--check-draw) var(--ease-out-expo);
 }
 
 /* ---------- Toast open / close ---------- */
@@ -431,6 +410,25 @@ body {
   padding: 4px;
 }
 
+/* ---------- 달력 결제일 마크: 살짝 커지며 나타나고, 눌리면 줄어든다 (--i = 순서) ---------- */
+.t-pop {
+  animation: t-pop 350ms var(--digit-ease) backwards;
+  animation-delay: calc(30ms * var(--i, 0));
+  transition: transform 150ms var(--ease-out-expo);
+}
+.t-pop:hover {
+  transform: scale(1.08);
+}
+.t-pop:active {
+  transform: scale(0.94);
+}
+@keyframes t-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+}
+
 /* ---------- Texts reveal (페이지 제목 줄이 시차를 두고 떠오름, --i = 줄 순서) ---------- */
 :root {
   --stagger-dur: 500ms;
@@ -455,6 +453,7 @@ body {
   .t-rise,
   .t-shake,
   .t-page,
+  .t-pop,
   .t-reveal,
   .t-error-msg,
   .t-skel > * {
@@ -464,8 +463,6 @@ body {
   .t-modal-backdrop,
   .t-tab,
   .t-tabs-pill,
-  .t-check,
-  .t-check path,
   .t-toast,
   .t-acc,
   .t-acc > div {

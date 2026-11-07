@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import type { AppData, Benefit, BenefitUse, PaymentMethod, Subscription, TableName, UsageLog } from '../types'
+import type { AppData, PaymentMethod, Subscription, TableName, UsageLog } from '../types'
 import { emptyData, type Repository } from './repo'
 import { subscriptionsToRoll } from '../lib/calc'
 import { todayISO } from '../lib/date'
@@ -10,12 +10,10 @@ interface Store {
   error: string | null
   today: string
   mode: Repository['kind']
-  saveSubscription(sub: Subscription, benefits?: Benefit[]): Promise<void>
+  saveSubscription(sub: Subscription): Promise<void>
   deleteSubscription(id: string): Promise<void>
   savePaymentMethod(pm: PaymentMethod): Promise<void>
   deletePaymentMethod(id: string): Promise<void>
-  addBenefitUse(use: BenefitUse): Promise<void>
-  deleteBenefitUse(id: string): Promise<void>
   saveUsageLog(log: UsageLog): Promise<void>
   deleteUsageLog(id: string): Promise<void>
   dismissError(): void
@@ -43,7 +41,7 @@ export function StoreProvider({ repo, children }: { repo: Repository; children: 
   const dataRef = useRef(data)
   dataRef.current = data
 
-  // 자정이 지나면 "오늘"을 갱신 (월 초 체크 리셋, D-day 계산)
+  // 자정이 지나면 "오늘"을 갱신 (D-day 계산)
   useEffect(() => {
     const t = setInterval(() => setToday(todayISO()), 60_000)
     return () => clearInterval(t)
@@ -75,7 +73,7 @@ export function StoreProvider({ repo, children }: { repo: Repository; children: 
       })
       await run(async () => {
         // 부모 → 자식 순서로 저장, 자식 → 부모 순서로 삭제
-        const order: TableName[] = ['paymentMethods', 'subscriptions', 'benefits', 'benefitUses', 'usageLogs']
+        const order: TableName[] = ['paymentMethods', 'subscriptions', 'benefits', 'usageLogs']
         for (const t of order) {
           const rows = changes.upsert?.[t]
           if (rows?.length) await repo.upsert(t, rows as unknown as ({ id: string } & Record<string, unknown>)[])
@@ -125,15 +123,8 @@ export function StoreProvider({ repo, children }: { repo: Repository; children: 
       error,
       today,
       mode: repo.kind,
-      async saveSubscription(sub, benefits) {
-        if (!benefits) return apply({ upsert: { subscriptions: [sub] } })
-        const keep = new Set(benefits.map((b) => b.id))
-        const removed = d().benefits.filter((b) => b.subscriptionId === sub.id && !keep.has(b.id)).map((b) => b.id)
-        const removedUses = d().benefitUses.filter((u) => removed.includes(u.benefitId)).map((u) => u.id)
-        return apply({
-          upsert: { subscriptions: [sub], benefits },
-          remove: { benefits: removed, benefitUses: removedUses },
-        })
+      async saveSubscription(sub) {
+        return apply({ upsert: { subscriptions: [sub] } })
       },
       async deleteSubscription(id) {
         const cur = d()
@@ -141,7 +132,6 @@ export function StoreProvider({ repo, children }: { repo: Repository; children: 
           remove: {
             subscriptions: [id],
             benefits: cur.benefits.filter((b) => b.subscriptionId === id).map((b) => b.id),
-            benefitUses: cur.benefitUses.filter((u) => u.subscriptionId === id).map((u) => u.id),
             usageLogs: cur.usageLogs.filter((l) => l.subscriptionId === id).map((l) => l.id),
           },
         })
@@ -155,12 +145,6 @@ export function StoreProvider({ repo, children }: { repo: Repository; children: 
           .map((s) => ({ ...s, paymentMethodId: null }))
         await apply({ upsert: { subscriptions: unlinked } })
         return apply({ remove: { paymentMethods: [id] } })
-      },
-      async addBenefitUse(use) {
-        return apply({ upsert: { benefitUses: [use] } })
-      },
-      async deleteBenefitUse(id) {
-        return apply({ remove: { benefitUses: [id] } })
       },
       async saveUsageLog(log) {
         return apply({ upsert: { usageLogs: [log] } })
