@@ -1,97 +1,38 @@
 # 구독 체크리스트
 
-개인용 정기구독 관리 웹앱. 이번 달 결제 달력과 구독 목록, 금액 합계를 한 화면에서 봅니다. (PRD: `구독 관리 웹앱 PRD.md`)
+## 1. 프로젝트 소개
 
-React + TypeScript + Vite + Tailwind CSS v4 · Supabase · Vitest
+개인용 정기구독 관리 웹앱입니다. 넷플릭스, 유튜브 프리미엄 같은 구독 서비스의 결제일과 금액을 한 화면에서 확인하고, 매달·매년 얼마를 쓰는지와 곧 결제될 구독을 놓치지 않는 것이 목적입니다.
 
-## 로컬 실행
+## 2. 기술 스택
+
+- **프론트엔드:** React 19, TypeScript, Vite, Tailwind CSS v4, React Router
+- **데이터·로그인:** Supabase (PostgreSQL, Auth, RLS) / 환경 변수가 없으면 localStorage
+- **아이콘:** simple-icons
+- **테스트·검사:** Vitest, oxlint
+- **배포:** Vercel
+
+## 3. 이용 방법
+
+**웹사이트:** https://subscriptionchecklist.vercel.app
+
+- 아이디와 비밀번호로 회원가입한 뒤 로그인합니다. 데이터는 계정별로 분리됩니다.
+- 구독을 추가하고 금액, 결제 주기, 결제일, 결제수단, 상태(구독중·무료체험·해지예정)를 입력합니다.
+- 대시보드에서 이번 달 결제 달력, 구독 목록, 월·연 환산 합계를 봅니다.
+- 결제일이 3일 이내로 다가온 구독과 끝나가는 무료체험은 배너로 알려 줍니다.
+- 결제수단을 따로 등록해 구독별로 연결할 수 있습니다.
+
+로컬에서 실행하면 Supabase 설정 없이도 **로컬 모드**로 동작합니다. 데이터는 브라우저에만 저장되고 샘플 데이터가 들어갑니다.
 
 ```bash
+git clone https://github.com/imjw0826/subscriptionchecklist.git
+cd subscriptionchecklist
 npm install
 npm run dev      # http://localhost:5173
-npm test         # 계산 로직 테스트
-npm run build
 ```
 
-Supabase 환경변수가 없으면 **로컬 모드**로 동작합니다. 데이터는 이 브라우저의 localStorage에만 저장되고, 첫 실행 때 샘플 데이터(넷플릭스 공유, 쿠팡와우, 네이버플러스, 유튜브 프리미엄, 연 결제 iCloud, 무료체험 밀리의 서재)가 들어갑니다.
+자신의 Supabase에 연결하려면 SQL Editor에서 `supabase/schema.sql`을 실행하고, `.env.example`을 `.env.local`로 복사해 `VITE_SUPABASE_URL`과 `VITE_SUPABASE_ANON_KEY`를 채웁니다. Authentication 설정에서 Confirm email은 꺼야 합니다. `service_role` 키는 앱에 넣지 마세요.
 
-## 배포 (Supabase + Vercel)
+## 4. 최근 업데이트
 
-### 1. Supabase — DB와 로그인
-
-1. [supabase.com](https://supabase.com)에서 새 프로젝트 생성 (Region: Northeast Asia (Seoul))
-2. **SQL Editor**에 `supabase/schema.sql` 전체를 붙여넣고 **Run** — 테이블 5개와 "본인 행만 접근" 보안 정책(RLS)이 만들어집니다
-3. **Authentication → Sign In / Providers**에서 *Allow new users to sign up*을 켜고 **Confirm email을 끄기**. 아이디는 메일이 오가지 않는 내부 주소라 이메일 확인을 끝낼 수 없습니다
-4. 앱의 **회원가입** 버튼으로 아이디와 비밀번호를 만듭니다. 주소를 아는 사람은 누구나 가입할 수 있고, 데이터는 RLS로 계정별로 분리됩니다
-5. 입력값에 `@`가 있으면 이메일로 로그인합니다
-6. **Project Settings → API**에서 `Project URL`과 `anon public`(또는 publishable) 키 복사
-
-### 2. Vercel — 웹 배포
-
-1. [vercel.com](https://vercel.com)에 GitHub로 로그인 → **Add New → Project** → `subscriptionchecklist` 저장소 **Import**
-2. Framework는 Vite로 자동 인식됩니다. **Environment Variables**에 두 개 추가 후 **Deploy**
-   - `VITE_SUPABASE_URL` = Project URL
-   - `VITE_SUPABASE_ANON_KEY` = anon public 키
-
-이후 GitHub `main`에 push하면 자동으로 다시 배포됩니다.
-
-### 매직링크 계정을 아이디·비밀번호로 전환
-
-기존 계정을 그대로 쓰면 구독 데이터도 그대로 유지됩니다. Supabase **SQL Editor**에서 아이디·비밀번호·기존 이메일을 바꿔 실행하세요.
-
-```sql
-update auth.users
-set email = '아이디@subscriptionchecklist.vercel.app',
-    encrypted_password = extensions.crypt('비밀번호', extensions.gen_salt('bf')),
-    email_confirmed_at = coalesce(email_confirmed_at, now())
-where email = '기존이메일@example.com';
-```
-
-아이디를 바꾸지 않고 기존 이메일로 로그인하려면 `email` 줄만 빼고 실행합니다.
-
-### 로컬에서 클라우드 DB로 실행
-
-```bash
-cp .env.example .env.local   # 두 값을 채운 뒤
-npm run dev
-```
-
-anon 키는 브라우저에 공개되는 용도의 키라 괜찮지만, `service_role` 키는 절대 앱이나 Vercel 환경변수에 넣지 마세요. 데이터 보호는 RLS 정책이 담당합니다.
-
-## 구조
-
-```
-src/
-  types.ts                 데이터 모델 (Subscription, PaymentMethod)
-  lib/calc.ts              계산 규칙 (순수 함수) + calc.test.ts
-  lib/date.ts, format.ts   날짜(월말 보정, D-day)·금액 포맷
-  store/repo.ts            저장소 추상화: localStorage / Supabase
-  store/StoreContext.tsx   앱 상태와 CRUD, 지난 결제일 자동 갱신
-  pages/                   대시보드, 상세, 구독 추가·편집, 결제수단, 로그인
-  components/              구독 표, 결제 달력, 요금제 안내, 모션·토스트, 공통 UI
-supabase/schema.sql        테이블 + RLS
-```
-
-## PRD 해석 메모
-
-- **결제 배너**: 결제일 D-3 ~ D-DAY인 구독중(active) 구독을 표시합니다. 무료체험은 종료일 D-3 이내(지난 경우 포함)를 표시합니다.
-- **무료체험 결제일**: 체험 중인 구독은 다음 결제일 = 체험 종료일이며 자동 갱신하지 않습니다. 체험이 끝나면 상태를 직접 바꿔주세요.
-- **월말 결제일**: 1/31 → 2/28 → 3/31처럼 원래 날짜를 기준으로 주기를 더해 날짜가 밀리지 않습니다.
-- **연 환산**: 월 환산액(반올림)×12가 아니라 주기당 금액×12/주기로 계산해 반올림 오차를 없앴습니다.
-- **임시구독**: 해지예정 구독을 뜻합니다. 대시보드에서 무료체험과 같은 표에 나오고, 끝나면 더 내지 않으므로 종료 후 월 금액은 0원입니다.
-- **결제 달력**: 구독중은 결제 주기로 이번 달 결제일을 계산해 이미 지난 날짜도 표시합니다. 무료체험은 종료일의 첫 결제만, 해지예정과 0원 구독은 표시하지 않습니다.
-- **혜택 안내**: 카탈로그에서 고른 요금제의 혜택을 줄글로 보여줍니다. 카탈로그에 없는 구독은 메모를 씁니다.
-- **정리된 데이터**: 상세 유형, 본전 기준, 이용 기록, 혜택 체크 기능은 없앴습니다. DB의 `benefits`, `benefit_uses`, `usage_logs` 테이블과 `subscriptions`의 `detail_type`, `usage_unit`, `usage_target` 열은 앱에서 쓰지 않을 뿐 그대로 남아 있습니다.
-
-## 디자인
-
-- [shadcn/ui](https://ui.shadcn.com): inset 사이드바, 표, 탭, 로그인 구성과 밀도
-- [Arc UI](https://uiarc.dev): 무채색 oklch 색, 그림자, 시간 토큰, 지표 카드, 빈 상태, 키보드 포커스
-- [affectUI](https://affectui.com): 차분한 수치 중심 구성 (토큰이 공개돼 있지 않아 구성만 참고)
-- [transitions.dev](https://transitions.dev): 숫자 등장, 탭 이동, 모달, 토스트, 툴팁 등 모션
-
-## 서비스 로고
-
-- simple-icons(CC0)에 있는 브랜드(넷플릭스, 유튜브, 스포티파이 등)는 패키지의 아이콘을 사용합니다.
-- 그 밖의 서비스는 각 회사가 App Store에 등록한 공식 앱 아이콘을 128px로 받아 `public/logos/`에 두었습니다 (2026-09-28 기준, 출처 is1-ssl.mzstatic.com). 로고의 권리는 각 회사에 있으며 서비스 식별 용도로만 씁니다.
-- Microsoft 365는 네 색 사각형 마크를 직접 그려 씁니다. 이미지가 없거나 불러오지 못하면 브랜드 색 글자 마크로 대신합니다 (`src/lib/brandLogos.tsx`).
+2026-11-07
